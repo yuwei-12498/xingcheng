@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.citytrip.mapper.PoiMapper">
+
+    <sql id="baseColumns">
+        id,
+        city_code,
+        city_name,
+        name,
+        category,
+        district,
+        address,
+        latitude,
+        longitude,
+        open_time,
+        close_time,
+        closed_weekdays,
+        temporarily_closed,
+        status_note,
+        status_source,
+        status_updated_at,
+        avg_cost,
+        stay_duration,
+        indoor,
+        night_available,
+        rain_friendly,
+        walking_level,
+        tags,
+        suitable_for,
+        description,
+        priority_score,
+        crowd_penalty
+    </sql>
+
+    <select id="selectAdminPoiPageRecords" resultType="com.citytrip.model.entity.Poi">
+        select
+            <include refid="baseColumns" />
+        from poi
+        <where>
+            <if test="name != null and name != ''">
+                name like concat('%', #{name}, '%')
+            </if>
+        </where>
+        order by id desc
+        limit #{offset}, #{size}
+    </select>
+
+    <select id="countAdminPois" resultType="long">
+        select count(1)
+        from poi
+        <where>
+            <if test="name != null and name != ''">
+                name like concat('%', #{name}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPlanningCandidates" resultType="com.citytrip.model.entity.Poi">
+        select
+            <include refid="baseColumns" />
+        from poi
+        <where>
+            temporarily_closed = 0
+            <if test="cityCode != null and cityCode != ''">
+                and (city_code = #{cityCode}
+                    or (city_code is null and (#{cityCode} = 'CD' or #{cityCode} = 'cd')))
+            </if>
+            <if test="(cityCode == null or cityCode == '') and cityName != null and cityName != ''">
+                and (city_name = #{cityName}
+                    or (city_name is null and #{cityName} = '成都'))
+            </if>
+            <if test="rainy">
+                and (indoor = 1 or rain_friendly = 1)
+            </if>
+            <if test="walkingLevel != null and walkingLevel != ''">
+                and
+                (
+                    case
+                        when lower(walking_level) = 'low' or walking_level = '低' then 1
+                        when lower(walking_level) = 'high' or walking_level = '高' then 3
+                        else 2
+                    end
+                ) &lt;=
+                (
+                    case
+                        when lower(#{walkingLevel}) = 'low' or #{walkingLevel} = '低' then 2
+                        when lower(#{walkingLevel}) = 'high' or #{walkingLevel} = '高' then 4
+                        else 3
+                    end
+                )
+            </if>
+        </where>
+        order by priority_score desc, status_updated_at desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="searchByNameInCity" resultType="com.citytrip.model.entity.Poi">
+        select
+            <include refid="baseColumns" />
+        from poi
+        <where>
+            temporarily_closed = 0
+            <if test="keyword != null and keyword != ''">
+                and name like concat('%', #{keyword}, '%')
+            </if>
+            <if test="cityCode != null and cityCode != ''">
+                and (city_code = #{cityCode}
+                    or (city_code is null and (#{cityCode} = 'CD' or #{cityCode} = 'cd')))
+            </if>
+            <if test="(cityCode == null or cityCode == '') and cityName != null and cityName != ''">
+                and (city_name = #{cityName}
+                    or (city_name is null and #{cityName} = '成都'))
+            </if>
+        </where>
+        order by priority_score desc, id desc
+        limit #{limit}
+    </select>
+
+    <insert id="insertAdminPoi" parameterType="com.citytrip.model.entity.Poi" useGeneratedKeys="true" keyProperty="id">
+        insert into poi (
+            city_code,
+            city_name,
+            name,
+            category,
+            district,
+            address,
+            latitude,
+            longitude,
+            open_time,
+            close_time,
+            closed_weekdays,
+            temporarily_closed,
+            status_note,
+            status_source,
+            status_updated_at,
+            avg_cost,
+            stay_duration,
+            indoor,
+            night_available,
+            rain_friendly,
+            walking_level,
+            tags,
+            suitable_for,
+            description,
+            priority_score,
+            crowd_penalty
+        ) values (
+            #{cityCode},
+            #{cityName},
+            #{name},
+            #{category},
+            #{district},
+            #{address},
+            #{latitude},
+            #{longitude},
+            #{openTime},
+            #{closeTime},
+            #{closedWeekdays},
+            #{temporarilyClosed},
+            #{statusNote},
+            #{statusSource},
+            #{statusUpdatedAt},
+            #{avgCost},
+            #{stayDuration},
+            #{indoor},
+            #{nightAvailable},
+            #{rainFriendly},
+            #{walkingLevel},
+            #{tags},
+            #{suitableFor},
+            #{description},
+            #{priorityScore},
+            #{crowdPenalty}
+        )
+    </insert>
+
+    <update id="updateAdminPoi" parameterType="com.citytrip.model.entity.Poi">
+        update poi
+        set
+            city_code = #{cityCode},
+            city_name = #{cityName},
+            name = #{name},
+            category = #{category},
+            district = #{district},
+            address = #{address},
+            latitude = #{latitude},
+            longitude = #{longitude},
+            open_time = #{openTime},
+            close_time = #{closeTime},
+            closed_weekdays = #{closedWeekdays},
+            temporarily_closed = #{temporarilyClosed},
+            status_note = #{statusNote},
+            status_source = #{statusSource},
+            status_updated_at = #{statusUpdatedAt},
+            avg_cost = #{avgCost},
+            stay_duration = #{stayDuration},
+            indoor = #{indoor},
+            night_available = #{nightAvailable},
+            rain_friendly = #{rainFriendly},
+            walking_level = #{walkingLevel},
+            tags = #{tags},
+            suitable_for = #{suitableFor},
+            description = #{description},
+            priority_score = #{priorityScore},
+            crowd_penalty = #{crowdPenalty}
+        where id = #{id}
+    </update>
+
+</mapper>

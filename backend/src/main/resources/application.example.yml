@@ -1,0 +1,200 @@
+﻿# Copy this file to ../.env or application-local.yml and replace placeholders.
+# Do not commit real passwords or API keys.
+
+server:
+  port: ${SERVER_PORT:8082}
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/${APP_DB_NAME:city_trip_db}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true}
+    username: ${DB_USERNAME:${APP_DB_USERNAME:root}}
+    password: ${DB_PASSWORD:${MYSQL_PWD:${APP_DB_PASSWORD:}}}
+  flyway:
+    enabled: ${APP_FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+    baseline-on-migrate: ${APP_FLYWAY_BASELINE_ON_MIGRATE:true}
+    baseline-version: ${APP_FLYWAY_BASELINE_VERSION:0}
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: ${REDIS_TIMEOUT:3s}
+  mail:
+    # Azure blocks direct outbound SMTP on port 25. Resend must use SMTPS 465.
+    host: smtp.resend.com
+    port: 465
+    username: resend
+    password: ${RESEND_API_KEY:}
+    protocol: smtps
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+        smtps:
+          auth: true
+          ssl:
+            enable: true
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+app:
+  cors:
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://127.0.0.1:3000}
+  redis:
+    enabled: ${APP_REDIS_ENABLED:false}
+  external-services:
+    require-enabled: ${APP_REQUIRE_EXTERNAL_SERVICES:false}
+  db:
+    # Flyway is the primary schema-management path. Enable this only as a diagnostic check.
+    verify-on-startup: ${APP_DB_VERIFY_ON_STARTUP:false}
+  auth:
+    mail:
+      from: ${APP_AUTH_MAIL_FROM:noreply@050923.xyz}
+    bootstrap-admin:
+      # Disabled by default to avoid silently creating a weak administrator account.
+      # To create the first admin, set enabled=true and provide a strong unique password.
+      enabled: ${APP_BOOTSTRAP_ADMIN_ENABLED:false}
+      username: ${APP_BOOTSTRAP_ADMIN_USERNAME:admin}
+      password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}
+      nickname: ${APP_BOOTSTRAP_ADMIN_NICKNAME:系统管理员}
+      sync-password: ${APP_BOOTSTRAP_ADMIN_SYNC_PASSWORD:false}
+  jwt:
+    secret: ${APP_JWT_SECRET:replace-with-at-least-32-random-characters}
+    expiration-hours: ${APP_JWT_EXPIRATION_HOURS:24}
+  planning:
+    ai-timeout-ms: ${APP_PLANNING_AI_TIMEOUT_MS:25000}
+  algorithm:
+    weights:
+      priority-default-score: ${APP_ALGO_PRIORITY_DEFAULT_SCORE:7.5}
+      priority-multiplier: ${APP_ALGO_PRIORITY_MULTIPLIER:2.5}
+      theme-match-score: ${APP_ALGO_THEME_MATCH_SCORE:3.5}
+      route-score-weight: ${APP_ALGO_ROUTE_SCORE_WEIGHT:6.0}
+      route-travel-penalty-weight: ${APP_ALGO_ROUTE_TRAVEL_PENALTY_WEIGHT:1.0}
+      route-wait-penalty-weight: ${APP_ALGO_ROUTE_WAIT_PENALTY_WEIGHT:0.5}
+      route-crowd-penalty-weight: ${APP_ALGO_ROUTE_CROWD_PENALTY_WEIGHT:4.0}
+      companion-match-score: ${APP_ALGO_COMPANION_MATCH_SCORE:2.5}
+      group-travel-fit-score: ${APP_ALGO_GROUP_TRAVEL_FIT_SCORE:3.0}
+      group-travel-mismatch-penalty: ${APP_ALGO_GROUP_TRAVEL_MISMATCH_PENALTY:1.5}
+      must-visit-score: ${APP_ALGO_MUST_VISIT_SCORE:120.0}
+      night-available-score: ${APP_ALGO_NIGHT_AVAILABLE_SCORE:2.0}
+      rain-friendly-score: ${APP_ALGO_RAIN_FRIENDLY_SCORE:1.5}
+      walking-fit-score: ${APP_ALGO_WALKING_FIT_SCORE:1.0}
+      low-budget-cheap-score: ${APP_ALGO_LOW_BUDGET_CHEAP_SCORE:2.0}
+      low-budget-expensive-penalty: ${APP_ALGO_LOW_BUDGET_EXPENSIVE_PENALTY:15.0}
+      low-budget-medium-penalty: ${APP_ALGO_LOW_BUDGET_MEDIUM_PENALTY:8.0}
+      medium-budget-very-expensive-penalty: ${APP_ALGO_MEDIUM_BUDGET_VERY_EXPENSIVE_PENALTY:12.0}
+      medium-budget-expensive-penalty: ${APP_ALGO_MEDIUM_BUDGET_EXPENSIVE_PENALTY:5.0}
+      high-budget-premium-score: ${APP_ALGO_HIGH_BUDGET_PREMIUM_SCORE:2.0}
+      status-stale-penalty: ${APP_ALGO_STATUS_STALE_PENALTY:2.0}
+      long-stay-threshold-minutes: ${APP_ALGO_LONG_STAY_THRESHOLD_MINUTES:180}
+      long-stay-max-penalty: ${APP_ALGO_LONG_STAY_MAX_PENALTY:3.0}
+      long-stay-penalty-step-minutes: ${APP_ALGO_LONG_STAY_PENALTY_STEP_MINUTES:45.0}
+      missing-business-hours-penalty: ${APP_ALGO_MISSING_BUSINESS_HOURS_PENALTY:1.0}
+      candidate-crowd-score-weight: ${APP_ALGO_CANDIDATE_CROWD_SCORE_WEIGHT:1.5}
+      minimum-poi-score: ${APP_ALGO_MINIMUM_POI_SCORE:1.0}
+      external-realtime-base-bonus: ${APP_ALGO_EXTERNAL_REALTIME_BASE_BONUS:1.2}
+      external-data-completeness-bonus: ${APP_ALGO_EXTERNAL_DATA_COMPLETENESS_BONUS:2.4}
+      external-business-details-bonus: ${APP_ALGO_EXTERNAL_BUSINESS_DETAILS_BONUS:1.6}
+      external-business-fallback-penalty: ${APP_ALGO_EXTERNAL_BUSINESS_FALLBACK_PENALTY:1.4}
+      first-leg-time-penalty-weight: ${APP_ALGO_FIRST_LEG_TIME_PENALTY_WEIGHT:0.9}
+      first-leg-distance-penalty-weight: ${APP_ALGO_FIRST_LEG_DISTANCE_PENALTY_WEIGHT:4.8}
+      first-leg-transfer-penalty-weight: ${APP_ALGO_FIRST_LEG_TRANSFER_PENALTY_WEIGHT:7.0}
+      start-mode-unknown-penalty: ${APP_ALGO_START_MODE_UNKNOWN_PENALTY:2.0}
+      start-mode-low-walking-penalty: ${APP_ALGO_START_MODE_LOW_WALKING_PENALTY:1.5}
+      start-mode-bike-penalty: ${APP_ALGO_START_MODE_BIKE_PENALTY:1.5}
+      start-mode-bus-extra-penalty: ${APP_ALGO_START_MODE_BUS_EXTRA_PENALTY:1.5}
+      start-mode-taxi-extra-penalty: ${APP_ALGO_START_MODE_TAXI_EXTRA_PENALTY:2.5}
+      start-mode-other-penalty: ${APP_ALGO_START_MODE_OTHER_PENALTY:3.0}
+      start-distance-soft-threshold-km: ${APP_ALGO_START_DISTANCE_SOFT_THRESHOLD_KM:2.5}
+      start-distance-soft-threshold-weight: ${APP_ALGO_START_DISTANCE_SOFT_THRESHOLD_WEIGHT:2.4}
+      start-distance-medium-threshold-km: ${APP_ALGO_START_DISTANCE_MEDIUM_THRESHOLD_KM:5.0}
+      start-distance-medium-base-penalty: ${APP_ALGO_START_DISTANCE_MEDIUM_BASE_PENALTY:10.0}
+      start-distance-medium-weight: ${APP_ALGO_START_DISTANCE_MEDIUM_WEIGHT:3.6}
+      start-distance-hard-threshold-km: ${APP_ALGO_START_DISTANCE_HARD_THRESHOLD_KM:9.0}
+      start-distance-hard-base-penalty: ${APP_ALGO_START_DISTANCE_HARD_BASE_PENALTY:20.0}
+      start-distance-hard-weight: ${APP_ALGO_START_DISTANCE_HARD_WEIGHT:5.2}
+      start-time-soft-threshold-minutes: ${APP_ALGO_START_TIME_SOFT_THRESHOLD_MINUTES:15}
+      start-time-soft-threshold-weight: ${APP_ALGO_START_TIME_SOFT_THRESHOLD_WEIGHT:0.9}
+      start-time-medium-threshold-minutes: ${APP_ALGO_START_TIME_MEDIUM_THRESHOLD_MINUTES:28}
+      start-time-medium-base-penalty: ${APP_ALGO_START_TIME_MEDIUM_BASE_PENALTY:8.0}
+      start-time-medium-weight: ${APP_ALGO_START_TIME_MEDIUM_WEIGHT:1.25}
+      start-time-hard-threshold-minutes: ${APP_ALGO_START_TIME_HARD_THRESHOLD_MINUTES:40}
+      start-time-hard-base-penalty: ${APP_ALGO_START_TIME_HARD_BASE_PENALTY:16.0}
+      start-time-hard-weight: ${APP_ALGO_START_TIME_HARD_WEIGHT:1.8}
+  ai-guard:
+    enabled: ${APP_AI_GUARD_ENABLED:true}
+    chat:
+      max-concurrent: ${APP_AI_GUARD_CHAT_MAX_CONCURRENT:6}
+      cooldown-ms: ${APP_AI_GUARD_CHAT_COOLDOWN_MS:250}
+    stream:
+      max-concurrent: ${APP_AI_GUARD_STREAM_MAX_CONCURRENT:4}
+      cooldown-ms: ${APP_AI_GUARD_STREAM_COOLDOWN_MS:500}
+    smart-fill:
+      max-concurrent: ${APP_AI_GUARD_SMART_FILL_MAX_CONCURRENT:4}
+      cooldown-ms: ${APP_AI_GUARD_SMART_FILL_COOLDOWN_MS:800}
+    generate:
+      max-concurrent: ${APP_AI_GUARD_GENERATE_MAX_CONCURRENT:3}
+      cooldown-ms: ${APP_AI_GUARD_GENERATE_COOLDOWN_MS:1200}
+  geo:
+    enabled: ${APP_GEO_ENABLED:false}
+    base-url: ${APP_GEO_BASE_URL:}
+    api-key: ${APP_GEO_API_KEY:}
+    api-key-query-name: ${APP_GEO_API_KEY_QUERY_NAME:key}
+    api-key-header-name: ${APP_GEO_API_KEY_HEADER_NAME:}
+    geocode-path: ${APP_GEO_GEOCODE_PATH:/geo/geocode}
+    keyword-search-path: ${APP_GEO_KEYWORD_PATH:/geo/search}
+    nearby-search-path: ${APP_GEO_NEARBY_PATH:/geo/nearby}
+    route-path: ${APP_GEO_ROUTE_PATH:/geo/route}
+    connect-timeout-ms: ${APP_GEO_CONNECT_TIMEOUT_MS:800}
+    read-timeout-ms: ${APP_GEO_READ_TIMEOUT_MS:1200}
+    default-limit: ${APP_GEO_DEFAULT_LIMIT:8}
+    default-city-name: ${APP_GEO_DEFAULT_CITY_NAME:成都}
+    nearby-radius-meters: ${APP_GEO_NEARBY_RADIUS_METERS:1200}
+    node-nearby-timeout-ms: ${APP_GEO_NODE_NEARBY_TIMEOUT_MS:260}
+  amap:
+    enabled: ${APP_AMAP_ENABLED:false}
+    base-url: ${APP_AMAP_BASE_URL:https://restapi.amap.com}
+    # Never commit real Amap keys. Set these via .env / application-local.yml / environment variables.
+    api-key: ${APP_AMAP_API_KEY:}
+    security-key: ${APP_AMAP_SECURITY_KEY:}
+    sign-requests: ${APP_AMAP_SIGN_REQUESTS:false}
+    connect-timeout-ms: ${APP_AMAP_CONNECT_TIMEOUT_MS:1500}
+    read-timeout-ms: ${APP_AMAP_READ_TIMEOUT_MS:5000}
+    walking-path: ${APP_AMAP_WALKING_PATH:/v3/direction/walking}
+    driving-path: ${APP_AMAP_DRIVING_PATH:/v3/direction/driving}
+    transit-path: ${APP_AMAP_TRANSIT_PATH:/v3/direction/transit/integrated}
+    travel-modes: ${APP_AMAP_TRAVEL_MODES:walking,transit,driving}
+    default-city-name: ${APP_AMAP_DEFAULT_CITY_NAME:成都}
+    walking-max-distance-km: ${APP_AMAP_WALKING_MAX_DISTANCE_KM:1.0}
+    transit-max-distance-km: ${APP_AMAP_TRANSIT_MAX_DISTANCE_KM:12.0}
+
+llm:
+  provider: ${LLM_PROVIDER:real}
+  fallback-to-mock: ${LLM_FALLBACK_TO_MOCK:false}
+  timeout-seconds: ${LLM_TIMEOUT_SECONDS:30}
+  connect-timeout-seconds: ${LLM_CONNECT_TIMEOUT_SECONDS:3}
+  read-timeout-seconds: ${LLM_READ_TIMEOUT_SECONDS:${LLM_TIMEOUT_SECONDS:30}}
+  features:
+    chat-online-enabled: ${LLM_FEATURE_CHAT_ONLINE_ENABLED:true}
+    tool-loop-enabled: ${LLM_FEATURE_TOOL_LOOP_ENABLED:true}
+    poi-live-enabled: ${LLM_FEATURE_POI_LIVE_ENABLED:true}
+    semantic-online-enabled: ${LLM_FEATURE_SEMANTIC_ONLINE_ENABLED:true}
+    embedding-online-enabled: ${LLM_FEATURE_EMBEDDING_ONLINE_ENABLED:true}
+    rerank-online-enabled: ${LLM_FEATURE_RERANK_ONLINE_ENABLED:true}
+    fail-open-enabled: ${LLM_FEATURE_FAIL_OPEN_ENABLED:true}
+    prefer-accuracy-mode: ${LLM_FEATURE_PREFER_ACCURACY_MODE:true}
+  openai:
+    enabled: ${LLM_OPENAI_ENABLED:false}
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    model: ${OPENAI_MODEL:gpt-5.4}
+    temperature: ${OPENAI_TEMPERATURE:0.7}
+    max-output-tokens: ${OPENAI_MAX_OUTPUT_TOKENS:600}

@@ -1,0 +1,35 @@
+{
+  "name": "citytrip-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "npm run test:unit && npm run test:node",
+    "test:unit": "vitest run",
+    "test:node": "node --test build/__tests__/backendPortConfig.test.js build/__tests__/resolveDevProxyTarget.test.js"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.1.0",
+    "axios": "^1.5.0",
+    "element-plus": "^2.3.14",
+    "html2canvas": "^1.4.1",
+    "lenis": "^1.3.23",
+    "lodash-es": "^4.18.1",
+    "lottie-web": "^5.13.0",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.3.1",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^27.0.1",
+    "rollup-plugin-visualizer": "^5.9.2",
+    "unplugin-auto-import": "^0.16.6",
+    "unplugin-vue-components": "^0.25.2",
+    "vite": "^4.4.9",
+    "vitest": "^3.2.4"
+  }
+}

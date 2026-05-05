@@ -1,0 +1,76 @@
+package com.citytrip.model.vo;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+@Data
+public class ItineraryNodeVO {
+    private String nodeKey;
+    private Integer dayNo;
+    private Integer stepOrder;
+    private Long poiId;
+    private String poiName;
+    private String category;
+    private String district;
+    private String address;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
+    private String startTime;
+    private String endTime;
+    private Integer stayDuration;
+
+    /**
+     * ??????? -> ??????????????
+     */
+    private Integer travelTime;
+    /**
+     * ??????? -> ????????????
+     */
+    private String travelTransportMode;
+    /**
+     * ??????? -> ??????????????
+     */
+    private BigDecimal travelDistanceKm;
+    /**
+     * ??????? -> ????????????????
+     */
+    private String travelNarrative;
+    /**
+     * ??????? -> ?????????? geometry path
+     */
+    private List<RoutePathPointVO> routePathPoints;
+    /**
+     * ??????? -> ????????????????
+     */
+    private SegmentRouteGuideVO segmentRouteGuide;
+
+    /**
+     * ??????? -> ????????????
+     */
+    private String departureTransportMode;
+    /**
+     * ??????? -> ????????????????
+     */
+    private Integer departureTravelTime;
+    /**
+     * ??????? -> ??????????????
+     */
+    private BigDecimal departureDistanceKm;
+
+    private BigDecimal cost;
+    private String sysReason;
+    private Map<String, Double> scoreBreakdown;
+    private String sourceType;
+    private String operatingStatus;
+    private String statusNote;
+    private LocalDateTime statusUpdatedAt;
+    private List<String> warmTipCandidates;
+    private String selectedWarmTip;
+    private List<String> nearbyHotels;
+    private List<String> nearbyFoods;
+    private List<String> nearbyShops;
+}

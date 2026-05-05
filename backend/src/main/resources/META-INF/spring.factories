@@ -1,0 +1,3 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.citytrip.config.DotEnvEnvironmentPostProcessor,\
+com.citytrip.config.DbCompatibilityEnvironmentPostProcessor

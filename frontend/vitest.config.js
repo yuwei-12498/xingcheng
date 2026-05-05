@@ -1,0 +1,12 @@
+﻿import { defineConfig, mergeConfig } from 'vitest/config'
+import viteConfig from './vite.config.js'
+
+export default mergeConfig(viteConfig, defineConfig({
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: [],
+    include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+    exclude: ['node_modules/**', 'dist/**', 'build/**']
+  }
+}))

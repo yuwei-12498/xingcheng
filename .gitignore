@@ -1,0 +1,90 @@
+# ===== Secrets / Config =====
+backend/src/main/resources/application.yml
+backend/src/main/resources/application-*.yml
+
+# ===== Backend (Java / Maven) =====
+/backend/target/
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
+.idea/
+.codex/
+.superpowers/
+.worktrees/
+.m2/
+.run/
+artifacts/
+.env
+.env.*
+frontend/node_modules/
+
+# Maven Wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# ===== Frontend (Node / Vue) =====
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.vite/
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.*.local
+
+# ===== IDE / Editor =====
+.idea/
+*.iml
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+logs/
+artifacts/dev-runtime/processes.json
+artifacts/dev-runtime/*.log
+
+# ===== Local snapshots / temp / private =====
+test_api.py
+test_models.py
+maven-settings.xml
+emu_screen.png
+tmp-compile/
+tmp_*.ps1
+tmp_*.sql
+backend/*.json
+backend/tmp_itinerary*.json
+
+# ===== Local docs not for publish =====
+*.docx
+系统全方位深度解析报告.md
+系统功能模块与系统架构分析文档.md
+详细项目文档与系统架构说明书.md
+backend/docs/
+
+# ===== Mobile local / generated =====
+mobile/.env*
+mobile/.flutter-plugins-dependencies
+mobile/.dart_tool/
+mobile/.idea/
+mobile/*.iml
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/Flutter/ephemeral/
+mobile/ios/Flutter/Generated.xcconfig
+mobile/ios/Flutter/flutter_export_environment.sh
+mobile/app_wakeup_check.png
+mobile/tmp_run_no_impeller.cmd
+
+# ===== Misc =====
+/git/
