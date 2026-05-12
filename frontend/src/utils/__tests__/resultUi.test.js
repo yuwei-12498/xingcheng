@@ -10,7 +10,8 @@ import {
   formatNodeTravelLabel,
   formatSegmentGuideSummary,
   formatTravelDistance,
-  formatTravelMode
+  formatTravelMode,
+  resolveSegmentGuideStatusLabels
 } from '../resultUi'
 
 describe('buildResultStatItems', () => {
@@ -154,7 +155,7 @@ describe('hero and travel helpers', () => {
   it('builds hero content from route, departure and option data', () => {
     const hero = buildResultHeroContent({
       itinerary: {
-        tips: '午后热门点位可能排队，建议把拍照站放在前半段。',
+        tips: '下午热门点位可能排队，建议把拍照站放在前半段。',
         originalReq: {
           tripDate: '2026-04-25',
           themes: ['美食', '夜游'],
@@ -198,7 +199,7 @@ describe('hero and travel helpers', () => {
     expect(hero.pills).toContain('雨天友好')
     expect(hero.pills).not.toContain('首段打车')
     expect(hero.recommendation).toBe('热门点位密度合适，顺路程度更高。')
-    expect(hero.footnote).toBe('午后热门点位可能排队，建议把拍照站放在前半段。')
+    expect(hero.footnote).toBe('下午热门点位可能排队，建议把拍照站放在前半段。')
   })
 
   it('formats travel labels, mode and distance for first leg and inner route legs', () => {
@@ -248,6 +249,32 @@ describe('segment route guide helpers', () => {
       durationMinutes: 14,
       distanceKm: 5.1
     })).toBe('打车约14分钟，约5.1公里')
+  })
+
+  it('keeps summary focused on the currently viewed transport mode', () => {
+    expect(formatSegmentGuideSummary({
+      transportMode: '打车',
+      recommendedTransportMode: '公交+步行',
+      durationMinutes: 9,
+      distanceKm: 3.2
+    })).toBe('打车约9分钟，约3.2公里')
+  })
+
+  it('separates recommended and current transport mode labels with a safe fallback', () => {
+    expect(resolveSegmentGuideStatusLabels({
+      transportMode: '打车',
+      recommendedTransportMode: '公交+步行'
+    })).toEqual({
+      recommendedModeLabel: '公交+步行',
+      currentModeLabel: '打车'
+    })
+
+    expect(resolveSegmentGuideStatusLabels({
+      transportMode: '步行'
+    })).toEqual({
+      recommendedModeLabel: '步行',
+      currentModeLabel: '步行'
+    })
   })
 
   it('prefers the backend summary when it exists', () => {

@@ -47,6 +47,19 @@ public class GenerateReqDTO {
     @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     @Size(max = 20, message = "mustVisitPoiNames must contain at most 20 items")
     private List<String> mustVisitPoiNames;
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    @Size(max = 12, message = "preferredPoiCategories must contain at most 12 items")
+    private List<String> preferredPoiCategories;
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    @Size(max = 12, message = "excludedPoiCategories must contain at most 12 items")
+    private List<String> excludedPoiCategories;
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    @Size(max = 12, message = "conflictWarnings must contain at most 12 items")
+    private List<String> conflictWarnings;
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    @Size(max = 12, message = "alternativePoiHints must contain at most 12 items")
+    private List<String> alternativePoiHints;
+    private Boolean budgetTight;
     @Size(max = 1000, message = "naturalLanguageRequirement must be at most 1000 characters")
     private String naturalLanguageRequirement;
     @Size(max = 120, message = "departurePlaceName must be at most 120 characters")

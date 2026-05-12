@@ -13,6 +13,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -89,11 +90,14 @@ public class ExternalPoiCandidateService {
         }
         int bounded = Math.max(1, Math.min(limit, 10));
         String cityName = request == null ? null : request.getCityName();
-        Set<String> topCategories = currentPois.stream()
-                .filter(Objects::nonNull)
-                .map(Poi::getCategory)
-                .filter(StringUtils::hasText)
-                .collect(Collectors.toSet());
+        Set<String> topCategories = resolvePreferredSearchCategories(request);
+        if (topCategories.isEmpty()) {
+            topCategories = currentPois.stream()
+                    .filter(Objects::nonNull)
+                    .map(Poi::getCategory)
+                    .filter(StringUtils::hasText)
+                    .collect(Collectors.toSet());
+        }
         if (topCategories.isEmpty()) {
             return Collections.emptyList();
         }
@@ -112,6 +116,16 @@ public class ExternalPoiCandidateService {
             safeAddCandidates(raw, geoSearchService.searchByKeyword(district + " 景点", cityName, bounded));
         }
         return dedupeAndMap(raw, null, request, bounded);
+    }
+
+    private Set<String> resolvePreferredSearchCategories(GenerateReqDTO request) {
+        if (request == null || request.getPreferredPoiCategories() == null || request.getPreferredPoiCategories().isEmpty()) {
+            return Collections.emptySet();
+        }
+        return request.getPreferredPoiCategories().stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private List<Poi> dedupeAndMap(List<GeoPoiCandidate> raw,

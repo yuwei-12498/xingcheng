@@ -16,6 +16,8 @@ public class SegmentRouteGuideVO {
      * 该段推荐交通方式（仅来自真实 route provider 或既有 travelLeg facts）。
      */
     private String transportMode;
+    private String recommendedTransportMode;
+    private String requestedMode;
 
     /**
      * 总时长（分钟）。

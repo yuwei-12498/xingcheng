@@ -23,6 +23,7 @@ public class ChatReqDTO {
 
     @Data
     public static class ChatContext {
+        private Long currentUserId;
         @Size(max = 64, message = "pageType must be at most 64 characters")
         private String pageType;
         @Size(max = 20, message = "preferences must contain at most 20 items")

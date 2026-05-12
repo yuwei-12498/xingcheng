@@ -2,6 +2,7 @@ package com.citytrip.service.application.itinerary;
 
 import com.citytrip.common.BadRequestException;
 import com.citytrip.model.dto.GenerateReqDTO;
+import com.citytrip.model.dto.SegmentTravelReqDTO;
 import com.citytrip.model.entity.Poi;
 import com.citytrip.model.entity.SavedItinerary;
 import com.citytrip.model.vo.ItineraryNodeVO;
@@ -9,6 +10,7 @@ import com.citytrip.model.vo.ItineraryOptionVO;
 import com.citytrip.model.vo.ItineraryVO;
 import com.citytrip.model.vo.SegmentRouteGuideVO;
 import com.citytrip.service.TravelTimeService;
+import com.citytrip.service.TravelModeRequest;
 import com.citytrip.service.domain.planning.SegmentRouteGuideService;
 import com.citytrip.service.impl.AmapTravelTimeServiceImpl;
 import com.citytrip.service.persistence.itinerary.SavedItineraryCodec;
@@ -44,10 +46,15 @@ public class ItinerarySegmentTravelUseCase {
     }
 
     public ItineraryVO calculate(Long userId, Long itineraryId, Integer segmentIndex) {
+        return calculate(userId, itineraryId, segmentIndex, null);
+    }
+
+    public ItineraryVO calculate(Long userId, Long itineraryId, Integer segmentIndex, SegmentTravelReqDTO req) {
         int index = segmentIndex == null ? -1 : segmentIndex;
         if (index < 0) {
             throw new BadRequestException("segmentIndex must be non-negative");
         }
+        TravelModeRequest requestedMode = TravelModeRequest.fromCode(req == null ? null : req.mode());
 
         SavedItinerary entity = savedItineraryRepository.requireOwned(userId, itineraryId);
         GenerateReqDTO request;
@@ -68,10 +75,13 @@ public class ItinerarySegmentTravelUseCase {
         boolean firstStopOfDay = isFirstStopOfDay(toNode, index);
         Poi from = firstStopOfDay ? buildDeparturePoi(request) : toPoi(nodes.get(index - 1));
         Poi to = toPoi(toNode);
-        TravelTimeService.TravelLegEstimate estimate = amapTravelTimeService.estimateTravelLeg(from, to);
-        applyEstimate(toNode, estimate, firstStopOfDay);
+        TravelTimeService.TravelLegEstimate recommendedEstimate = amapTravelTimeService.estimateTravelLeg(from, to, TravelModeRequest.AUTO);
+        TravelTimeService.TravelLegEstimate selectedEstimate = requestedMode.isAuto()
+                ? recommendedEstimate
+                : amapTravelTimeService.estimateTravelLeg(from, to, requestedMode);
+        applyEstimate(toNode, selectedEstimate, recommendedEstimate, requestedMode, firstStopOfDay);
         recomputeSchedules(itinerary.getNodes(), request);
-        applyEstimateToMatchingOptionNode(itinerary, toNode, estimate, firstStopOfDay, request);
+        applyEstimateToMatchingOptionNode(itinerary, toNode, selectedEstimate, recommendedEstimate, requestedMode, firstStopOfDay, request);
         refreshItineraryTotals(itinerary);
         return savedItineraryCommandService.save(userId, itineraryId, request, itinerary);
     }
@@ -85,7 +95,9 @@ public class ItinerarySegmentTravelUseCase {
 
     private void applyEstimateToMatchingOptionNode(ItineraryVO itinerary,
                                                    ItineraryNodeVO sourceNode,
-                                                   TravelTimeService.TravelLegEstimate estimate,
+                                                   TravelTimeService.TravelLegEstimate selectedEstimate,
+                                                   TravelTimeService.TravelLegEstimate recommendedEstimate,
+                                                   TravelModeRequest requestedMode,
                                                    boolean firstStop,
                                                    GenerateReqDTO request) {
         if (itinerary == null || itinerary.getOptions() == null || sourceNode == null) {
@@ -97,7 +109,7 @@ public class ItinerarySegmentTravelUseCase {
             }
             for (ItineraryNodeVO candidate : option.getNodes()) {
                 if (sameNode(candidate, sourceNode)) {
-                    applyEstimate(candidate, estimate, firstStop);
+                    applyEstimate(candidate, selectedEstimate, recommendedEstimate, requestedMode, firstStop);
                     recomputeSchedules(option.getNodes(), request);
                     refreshOptionTotals(option);
                 }
@@ -242,6 +254,8 @@ public class ItinerarySegmentTravelUseCase {
 
     private void applyEstimate(ItineraryNodeVO node,
                                TravelTimeService.TravelLegEstimate estimate,
+                               TravelTimeService.TravelLegEstimate recommendedEstimate,
+                               TravelModeRequest requestedMode,
                                boolean firstStop) {
         if (node == null || estimate == null) {
             return;
@@ -254,6 +268,14 @@ public class ItinerarySegmentTravelUseCase {
             node.setTravelTransportMode(estimate.transportMode().trim());
         }
         SegmentRouteGuideVO guide = segmentRouteGuideService.buildGuide(estimate);
+        if (guide != null) {
+            if (recommendedEstimate != null && StringUtils.hasText(recommendedEstimate.transportMode())) {
+                guide.setRecommendedTransportMode(recommendedEstimate.transportMode().trim());
+            }
+            if (requestedMode != null) {
+                guide.setRequestedMode(requestedMode.code());
+            }
+        }
         node.setSegmentRouteGuide(guide);
         node.setRoutePathPoints(guide == null ? List.of() : guide.getPathPoints());
         if (firstStop) {

@@ -5,6 +5,8 @@ import com.citytrip.model.dto.ChatReqDTO;
 import com.citytrip.model.entity.Poi;
 import com.citytrip.model.vo.ChatSkillPayloadVO;
 import com.citytrip.model.vo.ChatVO;
+import com.citytrip.service.ai.runtime.AiChatAugmentationContext;
+import com.citytrip.service.ai.runtime.AiChatAugmentationService;
 import com.citytrip.service.domain.ai.ChatEvidenceSkillService;
 import com.citytrip.service.domain.ai.ChatFactGuardService;
 import com.citytrip.service.domain.ai.ChatFirstLegEtaSkillService;
@@ -49,6 +51,8 @@ public class RealChatGatewayService {
     private VivoFunctionCallingService vivoFunctionCallingService;
     @Autowired(required = false)
     private RealLlmGatewayService realLlmGatewayService;
+    @Autowired(required = false)
+    private AiChatAugmentationService aiChatAugmentationService;
 
     @Autowired
     public RealChatGatewayService(OpenAiGatewayClient openAiGatewayClient,
@@ -172,17 +176,29 @@ public class RealChatGatewayService {
             );
         }
 
-        String userPrompt = safePromptBuilder.buildChatUserPrompt(req, chatPois, geoFactsResult.facts());
+        AiChatAugmentationContext augmentation = buildAugmentationContext(req, routeContext);
+        if (!augmentation.ragDocuments().isEmpty()) {
+            usedSkills.add("RAG");
+        }
+        if (!augmentation.toolPayloads().isEmpty()) {
+            usedSkills.add("FunctionCalling");
+        }
+        if (!augmentation.mcpEvidence().isEmpty()) {
+            usedSkills.add("MCP");
+        }
+
+        String userPrompt = safePromptBuilder.buildChatUserPrompt(req, chatPois, geoFactsResult.facts(), augmentation);
         List<OpenAiGatewayClient.OpenAiMessage> messages = new ArrayList<>();
         messages.add(new OpenAiGatewayClient.OpenAiMessage("system", systemPrompt));
         messages.add(new OpenAiGatewayClient.OpenAiMessage("user", userPrompt));
-        String prefetchedToolPayload = maybePrefetchToolPayload(req);
-        if (StringUtils.hasText(prefetchedToolPayload)) {
-            usedSkills.add("FunctionCalling");
-            messages.add(new OpenAiGatewayClient.OpenAiMessage("assistant", "Live tool result JSON: " + prefetchedToolPayload));
+        for (String prefetchedToolPayload : augmentation.toolPayloads()) {
+            if (!StringUtils.hasText(prefetchedToolPayload)) {
+                continue;
+            }
+            messages.add(new OpenAiGatewayClient.OpenAiMessage("assistant", "刚查到的信息：" + prefetchedToolPayload));
             messages.add(new OpenAiGatewayClient.OpenAiMessage(
                     "user",
-                    "Please answer the original question using the live tool result above when relevant."
+                    "请结合上面刚查到的信息回答用户原问题；如果和用户问题无关，可以不提。"
             ));
         }
         String answer = tokenConsumer == null
@@ -211,7 +227,7 @@ public class RealChatGatewayService {
                 routeContext,
                 usedSkills,
                 null,
-                buildRouteContextEvidence(routeContext)
+                mergeSkillEvidence(buildRouteContextEvidence(routeContext), augmentation.evidence())
         );
         if (tokenConsumer != null
                 && guarded.answer() != null
@@ -224,6 +240,28 @@ public class RealChatGatewayService {
             }
         }
         return new ChatGenerationResult(guarded.answer(), evidence, null);
+    }
+
+    private AiChatAugmentationContext buildAugmentationContext(ChatReqDTO req,
+                                                               ChatRouteContextSkillService.RouteContext routeContext) {
+        if (aiChatAugmentationService != null) {
+            return aiChatAugmentationService.build(
+                    req,
+                    routeContext,
+                    llmProperties.getFeatures().isPoiLiveEnabled(),
+                    true
+            );
+        }
+        String prefetchedToolPayload = maybePrefetchToolPayload(req);
+        if (!StringUtils.hasText(prefetchedToolPayload)) {
+            return AiChatAugmentationContext.empty();
+        }
+        return AiChatAugmentationContext.of(
+                List.of(),
+                List.of(prefetchedToolPayload),
+                List.of(),
+                List.of("tool:prefetch")
+        );
     }
 
     private String maybePrefetchToolPayload(ChatReqDTO req) {

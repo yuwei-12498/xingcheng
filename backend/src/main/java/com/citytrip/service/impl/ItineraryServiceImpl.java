@@ -9,6 +9,7 @@ import com.citytrip.model.dto.ReplaceReqDTO;
 import com.citytrip.model.dto.ReplanReqDTO;
 import com.citytrip.model.dto.ReplanRespDTO;
 import com.citytrip.model.dto.SaveItineraryReqDTO;
+import com.citytrip.model.dto.SegmentTravelReqDTO;
 import com.citytrip.model.vo.CommunityCommentVO;
 import com.citytrip.model.vo.CommunityItineraryDetailVO;
 import com.citytrip.model.vo.CommunityItineraryPageVO;
@@ -85,6 +86,11 @@ public class ItineraryServiceImpl implements ItineraryService {
     @Override
     public ItineraryVO calculateSegmentTravel(Long userId, Long itineraryId, Integer segmentIndex) {
         return itinerarySegmentTravelUseCase.calculate(userId, itineraryId, segmentIndex);
+    }
+
+    @Override
+    public ItineraryVO calculateSegmentTravel(Long userId, Long itineraryId, Integer segmentIndex, SegmentTravelReqDTO req) {
+        return itinerarySegmentTravelUseCase.calculate(userId, itineraryId, segmentIndex, req);
     }
 
     @Override

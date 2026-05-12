@@ -4,19 +4,58 @@ import com.citytrip.config.LlmProperties;
 import com.citytrip.model.dto.ChatReqDTO;
 import com.citytrip.model.vo.ChatStatusVO;
 import com.citytrip.model.vo.ChatVO;
+import com.citytrip.service.ChatService;
+import com.citytrip.service.ai.adapter.LangChainChatServiceAdapter;
+import com.citytrip.service.ai.config.AiPlatformConfig;
+import com.citytrip.service.ai.orchestrator.AiExecutionContextFactory;
+import com.citytrip.service.ai.orchestrator.AiSceneRouter;
+import com.citytrip.service.ai.orchestrator.LangChainAiOrchestrator;
 import com.citytrip.service.application.community.CommunitySemanticSearchService;
 import com.citytrip.service.impl.vivo.VivoEmbeddingClient;
 import com.citytrip.service.impl.vivo.VivoRerankClient;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class RoutingChatServiceImplTest {
+
+    @Test
+    void answerQuestionShouldPreferAiAdapterWhenProvided() {
+        LlmProperties properties = new LlmProperties();
+        properties.getFeatures().setChatOnlineEnabled(true);
+
+        RealChatGatewayService realChatService = mock(RealChatGatewayService.class);
+        MockChatServiceImpl mockChatService = mock(MockChatServiceImpl.class);
+        ChatService aiAdapter = new ChatService() {
+            @Override
+            public ChatVO answerQuestion(ChatReqDTO req) {
+                ChatVO vo = new ChatVO();
+                vo.setAnswer("adapter-answer");
+                return vo;
+            }
+
+            @Override
+            public ChatStatusVO getStatus() {
+                return new ChatStatusVO();
+            }
+        };
+
+        RoutingChatServiceImpl service = new RoutingChatServiceImpl(aiAdapter, realChatService, mockChatService, properties);
+
+        ChatVO result = service.answerQuestion(new ChatReqDTO());
+
+        assertThat(result.getAnswer()).isEqualTo("adapter-answer");
+        verifyNoInteractions(realChatService);
+        verifyNoInteractions(mockChatService);
+    }
 
     @Test
     void answerQuestionShouldUseMockWhenChatOnlineFeatureDisabled() {
@@ -64,7 +103,7 @@ class RoutingChatServiceImplTest {
 
         ChatVO result = service.answerQuestion(new ChatReqDTO());
 
-        assertThat(result.getAnswer()).contains("模型没有返回有效内容");
+        assertThat(result.getAnswer()).contains("没有拿到有效回答");
         assertThat(result.getAnswer()).doesNotContain("endpoint=");
         assertThat(result.getAnswer()).doesNotContain("OPENAI");
     }
@@ -90,7 +129,7 @@ class RoutingChatServiceImplTest {
         ChatVO result = service.streamAnswer(new ChatReqDTO(), token -> {
         });
 
-        assertThat(result.getAnswer()).contains("模型没有返回有效内容");
+        assertThat(result.getAnswer()).contains("没有拿到有效回答");
         assertThat(result.getAnswer()).doesNotContain("OpenAI message content is empty");
     }
 
@@ -130,5 +169,40 @@ class RoutingChatServiceImplTest {
 
         assertThat(status.isEmbeddingReady()).isFalse();
         assertThat(status.isRerankReady()).isFalse();
+    }
+
+    @Test
+    void springShouldWireRoutingChatServiceWithLangChainAdapterBean() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            LlmProperties properties = new LlmProperties();
+            context.registerBean(LlmProperties.class, () -> properties);
+            RealChatGatewayService realChatService = mock(RealChatGatewayService.class);
+            RealLlmGatewayService realLlmService = mock(RealLlmGatewayService.class);
+            MockChatServiceImpl mockChatService = mock(MockChatServiceImpl.class);
+            ChatVO delegated = new ChatVO();
+            delegated.setAnswer("真实模型主答：可以先去成都博物馆，再去宽窄巷子。");
+            when(realChatService.answerQuestion(any(ChatReqDTO.class))).thenReturn(delegated);
+            context.registerBean(RealChatGatewayService.class, () -> realChatService);
+            context.registerBean(RealLlmGatewayService.class, () -> realLlmService);
+            context.registerBean(MockChatServiceImpl.class, () -> mockChatService);
+            context.registerBean(AiPlatformConfig.class);
+            context.registerBean(AiSceneRouter.class);
+            context.registerBean(AiExecutionContextFactory.class);
+            context.registerBean(LangChainAiOrchestrator.class);
+            context.registerBean(LangChainChatServiceAdapter.class);
+            context.registerBean(RoutingChatServiceImpl.class, () -> new RoutingChatServiceImpl(realChatService, mockChatService, properties));
+
+            assertThatCode(context::refresh).doesNotThrowAnyException();
+
+            RoutingChatServiceImpl service = context.getBean(RoutingChatServiceImpl.class);
+            ChatReqDTO req = new ChatReqDTO();
+            req.setQuestion("帮我推荐成都博物馆和万象城");
+
+            ChatVO result = service.answerQuestion(req);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getAnswer()).isEqualTo("真实模型主答：可以先去成都博物馆，再去宽窄巷子。");
+            verify(realChatService).answerQuestion(any(ChatReqDTO.class));
+        }
     }
 }

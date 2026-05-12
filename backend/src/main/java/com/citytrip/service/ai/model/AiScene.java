@@ -1,0 +1,13 @@
+package com.citytrip.service.ai.model;
+
+public enum AiScene {
+    CHAT_QA,
+    SMART_FILL,
+    ROUTE_WARM_TIP,
+    OPTION_EXPLANATION,
+    POI_EXPLANATION,
+    SEGMENT_TRANSPORT_SUMMARY,
+    COMMUNITY_SEARCH_SUMMARY,
+    QUERY_REWRITE,
+    INTENT_EXTRACTION
+}

@@ -3,6 +3,8 @@ package com.citytrip.service.impl;
 import com.citytrip.config.AmapProperties;
 import com.citytrip.model.entity.Poi;
 import com.citytrip.service.TravelTimeService;
+import com.citytrip.service.TravelModeRequest;
+import com.citytrip.service.ai.model.TravelModeDecisionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,30 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class AmapTravelTimeServiceImplTest {
+
+    @Test
+    void shouldPreferTransitOverDrivingWhenTransitIsReasonableAndCheaper() {
+        TravelModeDecisionService service = new TravelModeDecisionService();
+
+        TravelTimeService.TravelLegEstimate selected = service.pickBest(List.of(
+                new TravelTimeService.TravelLegEstimate(12, BigDecimal.valueOf(6.0), "打车", List.of(), null),
+                new TravelTimeService.TravelLegEstimate(18, BigDecimal.valueOf(6.0), "公交+步行", List.of(), null)
+        ));
+
+        assertThat(selected.transportMode()).isEqualTo("公交+步行");
+    }
+
+    @Test
+    void shouldStillPreferTransitWhenDrivingIsOnlySlightlyFaster() {
+        TravelModeDecisionService service = new TravelModeDecisionService();
+
+        TravelTimeService.TravelLegEstimate selected = service.pickBest(List.of(
+                new TravelTimeService.TravelLegEstimate(12, BigDecimal.valueOf(5.0), "打车", List.of(), null),
+                new TravelTimeService.TravelLegEstimate(23, BigDecimal.valueOf(5.0), "公交+步行", List.of(), null)
+        ));
+
+        assertThat(selected.transportMode()).isEqualTo("公交+步行");
+    }
 
     @Test
     void estimatesDrivingLegFromAmapResponse() {
@@ -140,6 +166,65 @@ class AmapTravelTimeServiceImplTest {
         assertThat(estimate.pathPoints()).hasSize(3);
         assertThat(estimate.detailedRoute().steps()).hasSize(2);
         assertThat(estimate.detailedRoute().steps().get(1).lineName()).isEqualTo("地铁1号线");
+    }
+
+    @Test
+    void estimateTravelLegShouldParseBicyclingRouteWhenExplicitlyRequested() {
+        AmapProperties properties = enabledProperties(List.of("bicycling"));
+        RestTemplate restTemplate = new RestTemplate();
+        MockRestServiceServer server = MockRestServiceServer.createServer(restTemplate);
+        server.expect(once(), requestTo(allOf(
+                startsWith("https://restapi.amap.com/v4/direction/bicycling?"),
+                containsString("origin=104.06,30.66"),
+                containsString("destination=104.08,30.67"),
+                containsString("key=test-key")
+        ))).andRespond(withSuccess("""
+                {
+                  "errcode": 0,
+                  "errmsg": "OK",
+                  "data": {
+                    "paths": [
+                      {
+                        "duration": "720",
+                        "distance": "3600",
+                        "steps": [
+                          {
+                            "instruction": "沿着人民南路骑行",
+                            "distance": "1800",
+                            "duration": "360",
+                            "polyline": "104.060000,30.660000;104.070000,30.665000"
+                          },
+                          {
+                            "instruction": "缁х画鍓嶈繘鍒扮粓鐐?",
+                            "distance": "1800",
+                            "duration": "360",
+                            "polyline": "104.070000,30.665000;104.080000,30.670000"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+                """, MediaType.APPLICATION_JSON));
+
+        AmapTravelTimeServiceImpl service = new AmapTravelTimeServiceImpl(
+                properties,
+                restTemplate,
+                new ObjectMapper(),
+                new StubLocalTravelTimeService(99)
+        );
+
+        TravelTimeService.TravelLegEstimate estimate = service.estimateTravelLeg(
+                poi(1L, 30.66D, 104.06D),
+                poi(2L, 30.67D, 104.08D),
+                TravelModeRequest.BIKE
+        );
+
+        server.verify();
+        assertThat(estimate.transportMode()).isEqualTo("骑行");
+        assertThat(estimate.detailedRoute()).isNotNull();
+        assertThat(estimate.detailedRoute().steps()).isNotEmpty();
+        assertThat(estimate.detailedRoute().steps().get(0).type()).isEqualTo("bike");
     }
 
     @Test

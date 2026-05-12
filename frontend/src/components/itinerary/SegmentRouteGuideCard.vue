@@ -10,7 +10,8 @@
 
       <div class="guide-pill-stack">
         <span v-if="sourceLabel" class="guide-source-pill">{{ sourceLabel }}</span>
-        <span v-if="modeLabel" class="guide-mode-pill">{{ modeLabel }}</span>
+        <span v-if="recommendedModeLabel" class="guide-recommended-pill">默认推荐：{{ recommendedModeLabel }}</span>
+        <span v-if="currentModeLabel" class="guide-mode-pill">当前查看：{{ currentModeLabel }}</span>
       </div>
     </div>
   </section>
@@ -18,7 +19,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { buildSegmentGuideTitle, formatSegmentGuideSummary } from '@/utils/resultUi'
+import { buildSegmentGuideTitle, formatSegmentGuideSummary, resolveSegmentGuideStatusLabels } from '@/utils/resultUi'
 
 const props = defineProps({
   guide: { type: Object, default: null },
@@ -35,10 +36,9 @@ const title = computed(() => buildSegmentGuideTitle({
 }))
 
 const summary = computed(() => formatSegmentGuideSummary(props.guide))
-const modeLabel = computed(() => {
-  const raw = props.guide?.transportMode
-  return typeof raw === 'string' && raw.trim() ? raw.trim() : ''
-})
+const modeStatusLabels = computed(() => resolveSegmentGuideStatusLabels(props.guide))
+const recommendedModeLabel = computed(() => modeStatusLabels.value.recommendedModeLabel)
+const currentModeLabel = computed(() => modeStatusLabels.value.currentModeLabel)
 const isProviderBacked = computed(() => {
   const source = props.guide?.source
   return typeof source === 'string' && source.trim()
@@ -46,7 +46,7 @@ const isProviderBacked = computed(() => {
 const sourceLabel = computed(() => isProviderBacked.value ? '高德路线' : '')
 const localEstimateNote = computed(() => {
   if (sourceLabel.value) return ''
-  return props.guide?.detailAvailable === false ? '???????????????????' : ''
+  return props.guide?.detailAvailable === false ? '当前仅展示估算通行信息，请以实时路况为准。' : ''
 })
 </script>
 
@@ -148,7 +148,8 @@ const localEstimateNote = computed(() => {
 }
 
 .guide-mode-pill,
-.guide-source-pill {
+.guide-source-pill,
+.guide-recommended-pill {
   padding: 5px 12px;
   border-radius: 999px;
   font-size: 12px;
@@ -158,6 +159,11 @@ const localEstimateNote = computed(() => {
 .guide-mode-pill {
   background: rgba(64, 158, 255, 0.12);
   color: #2d79c7;
+}
+
+.guide-recommended-pill {
+  background: rgba(124, 92, 255, 0.1);
+  color: #6d55d8;
 }
 
 .guide-source-pill {

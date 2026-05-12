@@ -15,10 +15,17 @@ describe('SegmentRouteGuideCard component', () => {
   })
 
   it('uses shared helper functions for title and summary without fabricating guide data', () => {
-    expect(segmentGuideCardSource).toContain("import { buildSegmentGuideTitle, formatSegmentGuideSummary } from '@/utils/resultUi'")
+    expect(segmentGuideCardSource).toContain("import { buildSegmentGuideTitle, formatSegmentGuideSummary, resolveSegmentGuideStatusLabels } from '@/utils/resultUi'")
     expect(segmentGuideCardSource).toContain('buildSegmentGuideTitle({')
     expect(segmentGuideCardSource).toContain('formatSegmentGuideSummary(props.guide)')
-    expect(segmentGuideCardSource).toContain('props.guide?.transportMode')
+    expect(segmentGuideCardSource).toContain('resolveSegmentGuideStatusLabels(props.guide)')
+  })
+
+  it('shows default recommendation and current viewing mode as separate status pills', () => {
+    expect(segmentGuideCardSource).toContain('recommendedModeLabel')
+    expect(segmentGuideCardSource).toContain('currentModeLabel')
+    expect(segmentGuideCardSource).toContain('默认推荐：{{ recommendedModeLabel }}')
+    expect(segmentGuideCardSource).toContain('当前查看：{{ currentModeLabel }}')
   })
 
   it('does not render fallback mini maps or step-by-step detail panes anymore', () => {

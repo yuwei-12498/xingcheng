@@ -88,7 +88,10 @@ public class CityResolverService {
             return null;
         }
         String source = text.trim();
-        Set<String> cityNames = new TreeSet<>((a, b) -> Integer.compare(b.length(), a.length()));
+        Set<String> cityNames = new TreeSet<>((a, b) -> {
+            int byLength = Integer.compare(b.length(), a.length());
+            return byLength != 0 ? byLength : a.compareTo(b);
+        });
         cityNames.addAll(CITY_CODE_TO_NAME.values());
         for (String cityName : cityNames) {
             if (StringUtils.hasText(cityName) && source.contains(cityName)) {
@@ -98,7 +101,7 @@ public class CityResolverService {
         String lower = source.toLowerCase(Locale.ROOT);
         for (Map.Entry<String, String> entry : CITY_NAME_TO_CODE.entrySet()) {
             if (lower.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
-                return resolveCityName(entry.getValue(), entry.getValue());
+                return resolveCityName(null, entry.getValue());
             }
         }
         return null;

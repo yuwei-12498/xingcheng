@@ -13,6 +13,7 @@ import com.citytrip.model.dto.ReplaceReqDTO;
 import com.citytrip.model.dto.ReplanReqDTO;
 import com.citytrip.model.dto.ReplanRespDTO;
 import com.citytrip.model.dto.SaveItineraryReqDTO;
+import com.citytrip.model.dto.SegmentTravelReqDTO;
 import com.citytrip.model.dto.SmartFillReqDTO;
 import com.citytrip.model.vo.CommunityCommentVO;
 import com.citytrip.model.vo.CommunityItineraryDetailVO;
@@ -219,8 +220,9 @@ public class ItineraryController {
     @PostMapping("/{id}/segments/{segmentIndex}/travel")
     public ItineraryVO calculateSegmentTravel(@PathVariable("id") Long id,
                                               @PathVariable("segmentIndex") Integer segmentIndex,
+                                              @RequestBody(required = false) SegmentTravelReqDTO req,
                                               HttpServletRequest request) {
-        return itineraryService.calculateSegmentTravel(currentUserId(request), id, segmentIndex);
+        return itineraryService.calculateSegmentTravel(currentUserId(request), id, segmentIndex, req);
     }
 
     @LoginRequired

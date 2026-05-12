@@ -86,11 +86,11 @@ public class OpenAiChatServiceImpl implements ChatService {
 
     private String buildStatusMessage() {
         if (!llmProperties.canTryRealChat()) {
-            return "Real model config is incomplete.";
+            return "真实回答配置还不完整。";
         }
         if (llmProperties.canTryRealTool() && isGeoReady() && isSemanticReady()) {
-            return "vivo chat/tool/geo/semantic ready";
+            return "问答、查询、定位和语义检索都已接好";
         }
-        return "Real model config looks valid.";
+        return "真实回答配置可用。";
     }
 }

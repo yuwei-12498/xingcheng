@@ -31,7 +31,7 @@ public class MockLlmServiceImpl implements LlmService {
 
     private String buildItineraryRecommendationSummary(GenerateReqDTO userReq, List<ItineraryNodeVO> nodes) {
         int stopCount = nodes == null ? 0 : nodes.size();
-        StringBuilder builder = new StringBuilder("【系统生成】已为你组合出 ")
+        StringBuilder builder = new StringBuilder("已为你组合出 ")
                 .append(stopCount)
                 .append(" 个顺路景点，整体优先兼顾主题匹配、路程顺滑和时间窗可执行性。");
         if (userReq != null && userReq.getThemes() != null && userReq.getThemes().contains("文化")) {
@@ -93,7 +93,7 @@ public class MockLlmServiceImpl implements LlmService {
         }
         RouteCriticDecisionVO decision = new RouteCriticDecisionVO();
         decision.setSelectedOptionKey(selected.getOptionKey());
-        decision.setReason("AI Critic 已在候选路线中优先选择更贴合偏好、通行更稳的方案。");
+        decision.setReason("已在候选路线中优先选择更贴合偏好、通行更稳的方案。");
 
         Map<String, String> rejected = new LinkedHashMap<>();
         Map<String, Double> scores = new LinkedHashMap<>();

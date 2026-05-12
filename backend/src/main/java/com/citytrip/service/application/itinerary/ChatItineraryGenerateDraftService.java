@@ -148,6 +148,12 @@ public class ChatItineraryGenerateDraftService {
         if (StringUtils.hasText(parsed.getBudgetLevel())) {
             draft.setBudgetLevel(parsed.getBudgetLevel().trim());
         }
+        if (parsed.getTotalBudget() != null) {
+            draft.setTotalBudget(parsed.getTotalBudget());
+        }
+        if (parsed.getBudgetTight() != null) {
+            draft.setBudgetTight(parsed.getBudgetTight());
+        }
         if (parsed.getIsRainy() != null) {
             draft.setIsRainy(parsed.getIsRainy());
         }
@@ -162,6 +168,10 @@ public class ChatItineraryGenerateDraftService {
         }
         draft.setThemes(mergeDistinct(base.getThemes(), parsed.getThemes()));
         draft.setMustVisitPoiNames(mergeDistinct(base.getMustVisitPoiNames(), parsed.getMustVisitPoiNames()));
+        draft.setPreferredPoiCategories(mergeDistinct(base.getPreferredPoiCategories(), parsed.getPreferredPoiCategories()));
+        draft.setExcludedPoiCategories(mergeDistinct(base.getExcludedPoiCategories(), parsed.getExcludedPoiCategories()));
+        draft.setConflictWarnings(mergeDistinct(base.getConflictWarnings(), parsed.getConflictWarnings()));
+        draft.setAlternativePoiHints(mergeDistinct(base.getAlternativePoiHints(), parsed.getAlternativePoiHints()));
         if (StringUtils.hasText(parsed.getDepartureText())) {
             draft.setDeparturePlaceName(parsed.getDepartureText().trim());
         }
@@ -190,9 +200,14 @@ public class ChatItineraryGenerateDraftService {
         copy.setStartTime(base.getStartTime());
         copy.setEndTime(base.getEndTime());
         copy.setMustVisitPoiNames(copyList(base.getMustVisitPoiNames()));
+        copy.setPreferredPoiCategories(copyList(base.getPreferredPoiCategories()));
+        copy.setExcludedPoiCategories(copyList(base.getExcludedPoiCategories()));
+        copy.setConflictWarnings(copyList(base.getConflictWarnings()));
+        copy.setAlternativePoiHints(copyList(base.getAlternativePoiHints()));
         copy.setDeparturePlaceName(base.getDeparturePlaceName());
         copy.setDepartureLatitude(base.getDepartureLatitude());
         copy.setDepartureLongitude(base.getDepartureLongitude());
+        copy.setBudgetTight(base.getBudgetTight());
         return copy;
     }
 

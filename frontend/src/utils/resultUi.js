@@ -379,6 +379,20 @@ export const buildSegmentGuideTitle = ({ stepOrder, fromName, toName } = {}) => 
   return `${safeFrom} \u2192 ${safeTo}`
 }
 
+const normalizeGuideModeLabel = value => {
+  return typeof value === 'string' && value.trim() ? value.trim() : ''
+}
+
+export const resolveSegmentGuideStatusLabels = guide => {
+  const currentModeLabel = normalizeGuideModeLabel(guide?.transportMode)
+  const recommendedModeLabel = normalizeGuideModeLabel(guide?.recommendedTransportMode) || currentModeLabel
+
+  return {
+    recommendedModeLabel,
+    currentModeLabel
+  }
+}
+
 const buildConciseSegmentGuideSummary = guide => {
   const transportMode = typeof guide?.transportMode === 'string' && guide.transportMode.trim()
     ? guide.transportMode.trim()

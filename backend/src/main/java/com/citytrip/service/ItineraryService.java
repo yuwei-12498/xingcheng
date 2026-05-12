@@ -9,6 +9,7 @@ import com.citytrip.model.dto.ReplaceReqDTO;
 import com.citytrip.model.dto.ReplanReqDTO;
 import com.citytrip.model.dto.ReplanRespDTO;
 import com.citytrip.model.dto.SaveItineraryReqDTO;
+import com.citytrip.model.dto.SegmentTravelReqDTO;
 import com.citytrip.model.vo.CommunityCommentVO;
 import com.citytrip.model.vo.CommunityItineraryDetailVO;
 import com.citytrip.model.vo.CommunityItineraryPageVO;
@@ -28,7 +29,11 @@ public interface ItineraryService {
 
     ItineraryVO getItinerary(Long userId, Long itineraryId);
 
-    ItineraryVO calculateSegmentTravel(Long userId, Long itineraryId, Integer segmentIndex);
+    default ItineraryVO calculateSegmentTravel(Long userId, Long itineraryId, Integer segmentIndex) {
+        return calculateSegmentTravel(userId, itineraryId, segmentIndex, null);
+    }
+
+    ItineraryVO calculateSegmentTravel(Long userId, Long itineraryId, Integer segmentIndex, SegmentTravelReqDTO req);
 
     List<ItinerarySummaryVO> listItineraries(Long userId, boolean favoriteOnly, Integer limit);
 

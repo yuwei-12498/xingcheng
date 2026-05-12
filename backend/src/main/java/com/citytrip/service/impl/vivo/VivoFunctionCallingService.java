@@ -69,12 +69,12 @@ public class VivoFunctionCallingService {
         List<OpenAiGatewayClient.OpenAiMessage> followUp = new ArrayList<>(originalMessages);
         followUp.add(new OpenAiGatewayClient.OpenAiMessage(
                 "assistant",
-                "Tool calls requested: " + payload.substring(OpenAiGatewayClient.TOOL_CALL_PREFIX.length())
+                "已请求补充查询：" + payload.substring(OpenAiGatewayClient.TOOL_CALL_PREFIX.length())
         ));
         followUp.add(new OpenAiGatewayClient.OpenAiMessage(
                 "user",
-                "Tool results(JSON):\n" + String.join("\n", toolResults)
-                        + "\nPlease answer the original user question grounded in these tool results."
+                "刚查到的信息（结构化文本）：\n" + String.join("\n", toolResults)
+                        + "\n请结合这些信息回答用户原问题；如果信息不足，就直接说明还需要补充什么。"
         ));
         String finalAnswer = gatewayClient.request(options, apiKey, followUp);
         return new ToolLoopResult(StringUtils.hasText(finalAnswer) ? finalAnswer : String.join("\n", toolResults), toolResults);

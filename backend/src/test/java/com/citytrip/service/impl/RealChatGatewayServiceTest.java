@@ -4,6 +4,9 @@ import com.citytrip.config.LlmProperties;
 import com.citytrip.model.dto.ChatReqDTO;
 import com.citytrip.model.vo.ChatSkillPayloadVO;
 import com.citytrip.model.vo.ChatVO;
+import com.citytrip.service.ai.runtime.AiChatAugmentationContext;
+import com.citytrip.service.ai.runtime.AiChatAugmentationService;
+import com.citytrip.service.domain.ai.ChatEvidenceSkillService;
 import com.citytrip.service.domain.ai.ChatPoiSkillService;
 import com.citytrip.service.skill.SkillRouterService;
 import org.junit.jupiter.api.Test;
@@ -16,6 +19,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentCaptor.forClass;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -81,7 +87,12 @@ class RealChatGatewayServiceTest {
         LlmProperties properties = buildReadyProperties();
 
         when(safePromptBuilder.buildChatSystemPrompt()).thenReturn("system");
-        when(safePromptBuilder.buildChatUserPrompt(any(ChatReqDTO.class), anyList(), anyList())).thenReturn("user");
+        when(safePromptBuilder.buildChatUserPrompt(
+                any(ChatReqDTO.class),
+                anyList(),
+                anyList(),
+                any(AiChatAugmentationContext.class)
+        )).thenReturn("user");
         when(chatPoiSkillService.loadRelevantPois(any(ChatReqDTO.class))).thenReturn(List.of());
         when(gatewayClient.request(any(), any(), any())).thenReturn("给你一条建议");
         when(realLlmGatewayService.generateChatFollowUpTips("成都夜游怎么安排", "成都"))
@@ -120,7 +131,12 @@ class RealChatGatewayServiceTest {
         LlmProperties properties = buildReadyProperties();
 
         when(safePromptBuilder.buildChatSystemPrompt()).thenReturn("system");
-        when(safePromptBuilder.buildChatUserPrompt(any(ChatReqDTO.class), anyList(), anyList())).thenReturn("user");
+        when(safePromptBuilder.buildChatUserPrompt(
+                any(ChatReqDTO.class),
+                anyList(),
+                anyList(),
+                any(AiChatAugmentationContext.class)
+        )).thenReturn("user");
         when(chatPoiSkillService.loadRelevantPois(any(ChatReqDTO.class))).thenReturn(List.of());
         when(gatewayClient.request(any(), any(), any())).thenReturn("下雨天建议走室内路线");
         when(realLlmGatewayService.generateChatFollowUpTips("成都雨天怎么玩", "成都"))
@@ -160,7 +176,12 @@ class RealChatGatewayServiceTest {
         properties.getFeatures().setPoiLiveEnabled(false);
 
         when(safePromptBuilder.buildChatSystemPrompt()).thenReturn("system");
-        when(safePromptBuilder.buildChatUserPrompt(any(ChatReqDTO.class), anyList(), anyList())).thenReturn("user");
+        when(safePromptBuilder.buildChatUserPrompt(
+                any(ChatReqDTO.class),
+                anyList(),
+                anyList(),
+                any(AiChatAugmentationContext.class)
+        )).thenReturn("user");
         when(chatPoiSkillService.loadRelevantPois(any(ChatReqDTO.class))).thenReturn(List.of());
         when(gatewayClient.request(any(), any(), any())).thenReturn("附近有不少地方可以去");
         when(vivoFunctionCallingService.shouldEnterToolLoop(any())).thenReturn(false);
@@ -196,7 +217,12 @@ class RealChatGatewayServiceTest {
         properties.getFeatures().setToolLoopEnabled(false);
 
         when(safePromptBuilder.buildChatSystemPrompt()).thenReturn("system");
-        when(safePromptBuilder.buildChatUserPrompt(any(ChatReqDTO.class), anyList(), anyList())).thenReturn("user");
+        when(safePromptBuilder.buildChatUserPrompt(
+                any(ChatReqDTO.class),
+                anyList(),
+                anyList(),
+                any(AiChatAugmentationContext.class)
+        )).thenReturn("user");
         when(chatPoiSkillService.loadRelevantPois(any(ChatReqDTO.class))).thenReturn(List.of());
         when(gatewayClient.request(any(), any(), any())).thenReturn("普通回答");
 
@@ -217,6 +243,57 @@ class RealChatGatewayServiceTest {
         service.answerQuestion(chatRequest("给我推荐路线", "成都"));
 
         verify(vivoFunctionCallingService, never()).shouldEnterToolLoop(any());
+    }
+
+    @Test
+    void answerQuestionShouldInjectRagToolAndMcpContextIntoRealModelPrompt() {
+        OpenAiGatewayClient gatewayClient = mock(OpenAiGatewayClient.class);
+        ChatPoiSkillService chatPoiSkillService = mock(ChatPoiSkillService.class);
+        AiChatAugmentationService augmentationService = mock(AiChatAugmentationService.class);
+
+        LlmProperties properties = buildReadyProperties();
+        SafePromptBuilder safePromptBuilder = new SafePromptBuilder();
+
+        AiChatAugmentationContext augmentation = AiChatAugmentationContext.of(
+                List.of("city-guide: 成都只是样例，系统应按用户指定城市处理。"),
+                List.of("{\"tool\":\"search_poi\",\"status\":\"ok\",\"results\":[{\"name\":\"万象城\"}]}"),
+                List.of("{\"capability\":\"geo.search\",\"status\":\"ok\",\"results\":[{\"name\":\"成都万象城\"}]}"),
+                List.of("rag:city-guide", "tool:search_poi", "mcp:geo.search")
+        );
+        when(augmentationService.build(any(ChatReqDTO.class), any(), eq(true), eq(true))).thenReturn(augmentation);
+        when(chatPoiSkillService.loadRelevantPois(any(ChatReqDTO.class))).thenReturn(List.of());
+        when(gatewayClient.request(any(), any(), any())).thenReturn("可以优先按室内商圈和公交接驳安排。");
+
+        RealChatGatewayService service = new RealChatGatewayService(
+                gatewayClient,
+                properties,
+                safePromptBuilder,
+                chatPoiSkillService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new ChatEvidenceSkillService()
+        );
+        ReflectionTestUtils.setField(service, "aiChatAugmentationService", augmentationService);
+
+        ChatVO result = service.answerQuestion(chatRequest("万象城附近有什么推荐？", "成都"));
+
+        ArgumentCaptor<List<OpenAiGatewayClient.OpenAiMessage>> messagesCaptor = forClass(List.class);
+        verify(gatewayClient).request(any(), any(), messagesCaptor.capture());
+        List<OpenAiGatewayClient.OpenAiMessage> messages = messagesCaptor.getValue();
+        assertThat(messages.get(0).getContent()).contains("系统面向多城市", "成都只是样例城市");
+        assertThat(messages.get(1).getContent())
+                .contains("【可参考的城市信息】", "city-guide")
+                .contains("【刚查到的信息】", "search_poi")
+                .contains("【路线核对信息】", "geo.search")
+                .doesNotContain("【RAG参考资料】")
+                .doesNotContain("【工具结果】")
+                .doesNotContain("【MCP证据】");
+        assertThat(messages).anySatisfy(message ->
+                assertThat(message.getContent()).contains("刚查到的信息").contains("search_poi"));
+        assertThat(result.getEvidence()).contains("skills=RAG,FunctionCalling,MCP", "rag:city-guide", "tool:search_poi", "mcp:geo.search");
     }
 
     private LlmProperties buildReadyProperties() {

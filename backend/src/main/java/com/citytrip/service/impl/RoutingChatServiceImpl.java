@@ -6,6 +6,7 @@ import com.citytrip.model.dto.ChatReqDTO;
 import com.citytrip.model.vo.ChatStatusVO;
 import com.citytrip.model.vo.ChatVO;
 import com.citytrip.service.ChatService;
+import com.citytrip.service.ai.adapter.LangChainChatServiceAdapter;
 import com.citytrip.service.application.community.CommunitySemanticSearchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,17 +24,29 @@ import java.util.function.Consumer;
 public class RoutingChatServiceImpl implements ChatService {
     private static final Logger log = LoggerFactory.getLogger(RoutingChatServiceImpl.class);
 
+    private final ChatService aiAdapter;
     private final RealChatGatewayService realChatService;
     private final MockChatServiceImpl mockChatService;
     private final LlmProperties llmProperties;
+    @Autowired(required = false)
+    private LangChainChatServiceAdapter injectedAiAdapter;
     @Autowired(required = false)
     private GeoSearchProperties geoSearchProperties;
     @Autowired(required = false)
     private CommunitySemanticSearchService communitySemanticSearchService;
 
+    @Autowired
     public RoutingChatServiceImpl(RealChatGatewayService realChatService,
                                   MockChatServiceImpl mockChatService,
                                   LlmProperties llmProperties) {
+        this(null, realChatService, mockChatService, llmProperties);
+    }
+
+    RoutingChatServiceImpl(ChatService aiAdapter,
+                           RealChatGatewayService realChatService,
+                           MockChatServiceImpl mockChatService,
+                           LlmProperties llmProperties) {
+        this.aiAdapter = aiAdapter;
         this.realChatService = realChatService;
         this.mockChatService = mockChatService;
         this.llmProperties = llmProperties;
@@ -41,6 +54,9 @@ public class RoutingChatServiceImpl implements ChatService {
 
     @Override
     public ChatVO answerQuestion(ChatReqDTO req) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().answerQuestion(req);
+        }
         if (!llmProperties.getFeatures().isChatOnlineEnabled()) {
             log.info("Chat online feature is disabled, using local rule-based provider");
             return mockChatService.answerQuestion(req);
@@ -81,6 +97,9 @@ public class RoutingChatServiceImpl implements ChatService {
 
     @Override
     public ChatVO streamAnswer(ChatReqDTO req, Consumer<String> tokenConsumer) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().streamAnswer(req, tokenConsumer);
+        }
         if (!llmProperties.getFeatures().isChatOnlineEnabled()) {
             log.info("Chat online feature is disabled, using local rule-based stream");
             return mockChatService.streamAnswer(req, tokenConsumer);
@@ -148,35 +167,40 @@ public class RoutingChatServiceImpl implements ChatService {
         vo.setWarnings(llmProperties.getRealModelConfigWarnings());
 
         if (!chatOnlineEnabled) {
-            vo.setMessage("Chat online feature is disabled; current chat provider uses the local rule-based fallback.");
+            vo.setMessage("在线问答开关未开启，当前会使用本地规则兜底。");
             return vo;
         }
 
         if (llmProperties.isMockOnly()) {
-            vo.setMessage("Current chat provider uses the local rule-based fallback.");
+            vo.setMessage("当前被配置为只使用本地规则兜底。");
             return vo;
         }
 
         List<String> issues = llmProperties.getRealChatConfigIssues();
         if (!issues.isEmpty()) {
-            vo.setMessage("Real model config is invalid: " + String.join("; ", issues));
+            vo.setMessage("真实回答配置还不完整：" + String.join("; ", issues));
             return vo;
         }
 
         List<String> warnings = llmProperties.getRealModelConfigWarnings();
         if (!warnings.isEmpty()) {
             vo.setWarnings(warnings);
-            vo.setMessage("Real model config is available, but with warnings: " + String.join("; ", warnings));
+            vo.setMessage("真实回答配置可用，但还有提示：" + String.join("; ", warnings));
             return vo;
         }
 
         if (llmProperties.isFallbackToMock()) {
-            vo.setMessage(buildReadyMessage("Real model is preferred; local rule-based fallback is enabled."));
+            vo.setMessage(buildReadyMessage("真实回答优先，本地规则兜底已开启。"));
             return vo;
         }
 
-        vo.setMessage(buildReadyMessage("Real model is preferred; local rule-based fallback is disabled."));
+        vo.setMessage(buildReadyMessage("真实回答优先，本地规则兜底未开启。"));
         return vo;
+    }
+
+
+    private ChatService resolveAiAdapter() {
+        return aiAdapter != null ? aiAdapter : injectedAiAdapter;
     }
 
     private boolean isGeoReady() {
@@ -211,7 +235,7 @@ public class RoutingChatServiceImpl implements ChatService {
 
     private String buildReadyMessage(String fallbackMessage) {
         if (llmProperties.canTryRealTool() && isGeoReady() && isSemanticReady()) {
-            return "vivo chat/tool/geo/semantic ready";
+            return "问答、查询、定位和语义检索都已接好";
         }
         return fallbackMessage;
     }
@@ -222,7 +246,7 @@ public class RoutingChatServiceImpl implements ChatService {
 
     private ChatVO buildErrorResponse() {
         ChatVO vo = new ChatVO();
-        vo.setAnswer("刚才模型没有返回有效内容。我已经记录这个异常了，你可以直接换个说法继续，例如：把 IFS 加到建设路小吃街后面，或把路线扩展到 5 站。");
+        vo.setAnswer("刚才没有拿到有效回答。我已经记录这个异常了，你可以直接换个说法继续，例如：把 IFS 加到建设路小吃街后面，或把路线扩展到 5 站。");
         vo.setRelatedTips(List.of("继续修改当前路线", "换个说法重试"));
         return vo;
     }

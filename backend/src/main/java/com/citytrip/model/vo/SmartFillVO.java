@@ -14,6 +14,7 @@ public class SmartFillVO {
     private String startTime;
     private String endTime;
     private String budgetLevel;
+    private Double totalBudget;
     private List<String> themes = new ArrayList<>();
     private Boolean isRainy;
     private Boolean isNight;
@@ -25,5 +26,10 @@ public class SmartFillVO {
     private List<String> departureCandidates = new ArrayList<>();
     private Double departureLatitude;
     private Double departureLongitude;
+    private List<String> conflictWarnings = new ArrayList<>();
+    private List<String> alternativePoiHints = new ArrayList<>();
+    private List<String> preferredPoiCategories = new ArrayList<>();
+    private List<String> excludedPoiCategories = new ArrayList<>();
+    private Boolean budgetTight;
     private List<String> summary = new ArrayList<>();
 }

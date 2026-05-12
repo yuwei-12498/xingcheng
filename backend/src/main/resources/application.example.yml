@@ -169,9 +169,10 @@ app:
     connect-timeout-ms: ${APP_AMAP_CONNECT_TIMEOUT_MS:1500}
     read-timeout-ms: ${APP_AMAP_READ_TIMEOUT_MS:5000}
     walking-path: ${APP_AMAP_WALKING_PATH:/v3/direction/walking}
+    bicycling-path: ${APP_AMAP_BICYCLING_PATH:/v4/direction/bicycling}
     driving-path: ${APP_AMAP_DRIVING_PATH:/v3/direction/driving}
     transit-path: ${APP_AMAP_TRANSIT_PATH:/v3/direction/transit/integrated}
-    travel-modes: ${APP_AMAP_TRAVEL_MODES:walking,transit,driving}
+    travel-modes: ${APP_AMAP_TRAVEL_MODES:walking,bicycling,transit,driving}
     default-city-name: ${APP_AMAP_DEFAULT_CITY_NAME:成都}
     walking-max-distance-km: ${APP_AMAP_WALKING_MAX_DISTANCE_KM:1.0}
     transit-max-distance-km: ${APP_AMAP_TRANSIT_MAX_DISTANCE_KM:12.0}

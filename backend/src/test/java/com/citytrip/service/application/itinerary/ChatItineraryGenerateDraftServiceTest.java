@@ -84,6 +84,31 @@ class ChatItineraryGenerateDraftServiceTest {
     }
 
     @Test
+    void shouldCarryIntentCategoriesIntoGenerateDraft() {
+        SmartFillUseCase smartFillUseCase = mock(SmartFillUseCase.class);
+        SmartFillVO parsed = new SmartFillVO();
+        parsed.setThemes(List.of("美食"));
+        parsed.setTotalBudget(100D);
+        parsed.setBudgetTight(true);
+        parsed.setPreferredPoiCategories(List.of("火锅", "餐饮"));
+        parsed.setExcludedPoiCategories(List.of("五金", "家装", "装修材料", "纱窗"));
+        when(smartFillUseCase.parse(argThat(req -> req != null))).thenReturn(parsed);
+
+        ChatItineraryGenerateDraftService service = new ChatItineraryGenerateDraftService(smartFillUseCase);
+        ChatReqDTO req = resultPageRequestWithBase();
+        req.setQuestion("我预算100想吃火锅");
+
+        ChatSkillPayloadVO payload = service.buildDraft(req);
+
+        GenerateReqDTO draft = payload.getGenerateDraft();
+        assertThat(draft.getTotalBudget()).isEqualTo(100D);
+        assertThat(draft.getBudgetTight()).isTrue();
+        assertThat(draft.getThemes()).contains("美食");
+        assertThat(draft.getPreferredPoiCategories()).contains("火锅", "餐饮");
+        assertThat(draft.getExcludedPoiCategories()).contains("五金", "家装", "装修材料", "纱窗");
+    }
+
+    @Test
     void shouldKeepBaseTripDateWhenParsedTripDateIsNotIsoDate() {
         SmartFillUseCase smartFillUseCase = mock(SmartFillUseCase.class);
         SmartFillVO parsed = new SmartFillVO();

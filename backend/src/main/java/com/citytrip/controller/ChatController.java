@@ -48,6 +48,7 @@ public class ChatController {
     @LoginRequired
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamQuestion(@Valid @RequestBody ChatReqDTO req, HttpServletRequest request) {
+        bindCurrentUser(req, currentUserId(request));
         log.info("Received streaming chat request. questionLength={}, hasContext={}", questionLength(req), hasContext(req));
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_MILLIS);
         AiRequestGuard.GuardPermit guardPermit = aiRequestGuard.acquire("stream", guardSubject(request));
@@ -160,14 +161,14 @@ public class ChatController {
 
     private String sanitizeErrorMessage(String message) {
         if (message == null || message.trim().isEmpty()) {
-            return "聊天服务暂时没有返回有效内容，请稍后再试或换个说法继续。";
+            return "刚才没有拿到有效回答，请稍后重试或换个说法继续。";
         }
         String value = message.trim();
         if (value.contains("Model request failed")
                 || value.contains("OpenAI message content is empty")
                 || value.contains("endpoint=")
                 || value.contains("OPENAI_")) {
-            return "聊天服务暂时没有返回有效内容，请稍后再试或换个说法继续。";
+            return "刚才没有拿到有效回答，请稍后重试或换个说法继续。";
         }
         return value;
     }
@@ -183,8 +184,22 @@ public class ChatController {
         return req != null && req.getContext() != null;
     }
 
+    private void bindCurrentUser(ChatReqDTO req, Long currentUserId) {
+        if (req == null || currentUserId == null) {
+            return;
+        }
+        if (req.getContext() == null) {
+            req.setContext(new ChatReqDTO.ChatContext());
+        }
+        req.getContext().setCurrentUserId(currentUserId);
+    }
+
+    private Long currentUserId(HttpServletRequest request) {
+        return request == null ? null : (Long) request.getAttribute(com.citytrip.common.AuthConstants.LOGIN_USER_ID);
+    }
+
     private String guardSubject(HttpServletRequest request) {
-        Long userId = request == null ? null : (Long) request.getAttribute(com.citytrip.common.AuthConstants.LOGIN_USER_ID);
+        Long userId = currentUserId(request);
         if (userId != null) {
             return "user:" + userId;
         }

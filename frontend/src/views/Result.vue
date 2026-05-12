@@ -370,6 +370,16 @@
       <el-empty description="暂时没有找到行程，请先回首页生成。" />
     </div>
 
+    <SegmentTravelModeDialog
+      :visible="showSegmentTravelModeDialog"
+      :selected-mode="pendingSegmentTravelMode"
+      :from-name="pendingSegmentTravelFromName"
+      :to-name="pendingSegmentTravelToName"
+      @select="handleSelectSegmentTravelMode"
+      @confirm="handleConfirmSegmentTravelMode"
+      @cancel="handleCancelSegmentTravelMode"
+    />
+
     <ItineraryEditDialog
       v-model="editDialogVisible"
       :itinerary="itinerary"
@@ -393,6 +403,7 @@ import PublishRouteDialog from '@/components/community/PublishRouteDialog.vue'
 import ItineraryEditDialog from '@/components/itinerary/ItineraryEditDialog.vue'
 import ItineraryMapCard from '@/components/itinerary/ItineraryMapCard.vue'
 import SegmentRouteGuideCard from '@/components/itinerary/SegmentRouteGuideCard.vue'
+import SegmentTravelModeDialog from '@/components/itinerary/SegmentTravelModeDialog.vue'
 import {
   reqCalculateSegmentTravel,
   reqFavoriteItinerary,
@@ -445,6 +456,11 @@ const activeDayIndex = ref(0)
 const hoveredSegmentIndex = ref(null)
 const pinnedSegmentIndex = ref(null)
 const segmentTravelLoading = ref({})
+const showSegmentTravelModeDialog = ref(false)
+const pendingSegmentTravelMode = ref('')
+const pendingSegmentTravelSegmentIndex = ref(-1)
+const pendingSegmentTravelFromName = ref('')
+const pendingSegmentTravelToName = ref('')
 const timelineNodeRefs = ref([])
 const mapTransitionKey = ref(0)
 const isMapSwitching = ref(false)
@@ -454,6 +470,14 @@ const MAP_SWITCH_RESET_MS = 440
 let mapSwitchOutTimer = null
 let mapSwitchResetTimer = null
 const ITINERARY_UPDATED_EVENT = 'citytrip:itinerary-updated'
+
+const resetPendingSegmentTravelDialogState = () => {
+  showSegmentTravelModeDialog.value = false
+  pendingSegmentTravelMode.value = ''
+  pendingSegmentTravelSegmentIndex.value = -1
+  pendingSegmentTravelFromName.value = ''
+  pendingSegmentTravelToName.value = ''
+}
 
 const originalReq = computed(() => itinerary.value?.originalReq || null)
 const isLoggedIn = computed(() => Boolean(authState.user))
@@ -941,31 +965,70 @@ const resolveGlobalNodeIndex = node => {
   return activeNodes.value.findIndex(item => buildNodeKey(item) === key)
 }
 
+const resolveDisplayNodeIndex = node => {
+  const directIndex = displayNodes.value.indexOf(node)
+  if (directIndex >= 0) {
+    return directIndex
+  }
+  const key = buildNodeKey(node)
+  return displayNodes.value.findIndex(item => buildNodeKey(item) === key)
+}
+
 const isSegmentTravelLoading = node => {
   const index = resolveGlobalNodeIndex(node)
   return index >= 0 && Boolean(segmentTravelLoading.value[index])
 }
 
-const handleCalculateSegmentTravel = async node => {
+const handleCalculateSegmentTravel = node => {
   if (!ensureLogin('计算通行方式')) return
   if (!itinerary.value?.id) {
     ElMessage.warning('当前路线尚未保存，暂时无法计算通行方式')
     return
   }
+
   const segmentIndex = resolveGlobalNodeIndex(node)
   if (segmentIndex < 0) {
-    ElMessage.warning('未找到该路段，请刷新后重试')
+    ElMessage.warning('未找到该路线段，请刷新后重试')
     return
   }
+
+  const displayNodeIndex = resolveDisplayNodeIndex(node)
+  pendingSegmentTravelSegmentIndex.value = segmentIndex
+  pendingSegmentTravelMode.value = ''
+  pendingSegmentTravelFromName.value = buildSegmentGuideFromName(displayNodeIndex >= 0 ? displayNodeIndex : 0)
+  pendingSegmentTravelToName.value = buildSegmentGuideToName(node)
+  showSegmentTravelModeDialog.value = true
+}
+
+const handleSelectSegmentTravelMode = mode => {
+  pendingSegmentTravelMode.value = mode
+}
+
+const handleCancelSegmentTravelMode = () => {
+  resetPendingSegmentTravelDialogState()
+}
+
+const handleConfirmSegmentTravelMode = async () => {
+  if (!pendingSegmentTravelMode.value) {
+    return
+  }
+  if (!itinerary.value?.id || pendingSegmentTravelSegmentIndex.value < 0) {
+    resetPendingSegmentTravelDialogState()
+    return
+  }
+
+  const segmentIndex = pendingSegmentTravelSegmentIndex.value
 
   segmentTravelLoading.value = {
     ...segmentTravelLoading.value,
     [segmentIndex]: true
   }
+
   try {
-    const nextItinerary = await reqCalculateSegmentTravel(itinerary.value.id, segmentIndex)
+    const nextItinerary = await reqCalculateSegmentTravel(itinerary.value.id, pendingSegmentTravelSegmentIndex.value, pendingSegmentTravelMode.value)
     persistItinerary(nextItinerary)
-    ElMessage.success('通行方式已更新')
+    ElMessage.success('已按所选方式更新本段路线')
+    resetPendingSegmentTravelDialogState()
   } catch (error) {
     ElMessage.error(error?.response?.data?.message || '通行方式计算失败，请稍后重试')
   } finally {
@@ -974,6 +1037,7 @@ const handleCalculateSegmentTravel = async node => {
     segmentTravelLoading.value = nextLoading
   }
 }
+
 
 const goBack = () => {
   router.push('/')

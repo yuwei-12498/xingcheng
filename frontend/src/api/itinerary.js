@@ -95,10 +95,11 @@ export function reqGetItinerary(id) {
   })
 }
 
-export function reqCalculateSegmentTravel(itineraryId, segmentIndex) {
+export function reqCalculateSegmentTravel(itineraryId, segmentIndex, mode) {
   return request({
     url: `/itineraries/${itineraryId}/segments/${segmentIndex}/travel`,
     method: 'post',
+    data: { mode },
     skipErrorMessage: true
   })
 }

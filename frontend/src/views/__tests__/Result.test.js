@@ -98,6 +98,18 @@ describe('Result view advanced layout', () => {
     expect(resultSource).not.toContain('handleFocusRouteGuideSegment')
   })
 
+  it('opens a segment travel mode dialog before recalculating a route leg', () => {
+    expect(resultSource).toContain("import SegmentTravelModeDialog from '@/components/itinerary/SegmentTravelModeDialog.vue'")
+    expect(resultSource).toContain('<SegmentTravelModeDialog')
+    expect(resultSource).toContain('showSegmentTravelModeDialog')
+    expect(resultSource).toContain('pendingSegmentTravelMode')
+    expect(resultSource).toContain('pendingSegmentTravelSegmentIndex')
+    expect(resultSource).toContain('handleSelectSegmentTravelMode')
+    expect(resultSource).toContain('handleConfirmSegmentTravelMode')
+    expect(resultSource).toContain('handleCancelSegmentTravelMode')
+    expect(resultSource).toContain('reqCalculateSegmentTravel(itinerary.value.id, pendingSegmentTravelSegmentIndex.value, pendingSegmentTravelMode.value)')
+  })
+
   it('syncs the result page when chat replacement updates the itinerary snapshot', () => {
     expect(resultSource).toContain('citytrip:itinerary-updated')
     expect(resultSource).toContain('window.addEventListener')

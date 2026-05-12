@@ -1,0 +1,44 @@
+[
+  {
+    "id": "kuanzhai-overview",
+    "city": "成都",
+    "categoryFile": "historic-street",
+    "poiName": "宽窄巷子",
+    "aliases": ["宽窄巷子", "宽窄"],
+    "factType": "overview",
+    "content": "宽窄巷子由宽巷子、窄巷子和井巷子组成，是成都少城历史街区的代表，适合体验老街建筑、茶馆和慢节奏逛街。",
+    "sourceName": "人民网宽窄巷子报道",
+    "sourceUrl": "https://society.people.com.cn/n1/2026/0123/c1008-40651173.html",
+    "updatedAt": "2026-05-12",
+    "tags": ["历史街区", "老成都", "茶馆"],
+    "weight": 1.3
+  },
+  {
+    "id": "jinli-overview",
+    "city": "成都",
+    "categoryFile": "historic-street",
+    "poiName": "锦里",
+    "aliases": ["锦里", "锦里古街"],
+    "factType": "overview",
+    "content": "锦里以三国文化与川西民俗氛围见长，夜间灯光氛围更强，适合作为武侯祠周边的晚餐与散步段。",
+    "sourceName": "锦里官网",
+    "sourceUrl": "https://www.cdjinli.com/",
+    "updatedAt": "2026-05-12",
+    "tags": ["古街", "夜游", "民俗"],
+    "weight": 1.3
+  },
+  {
+    "id": "dongjiao-memory-overview",
+    "city": "成都",
+    "categoryFile": "historic-street",
+    "poiName": "东郊记忆",
+    "aliases": ["东郊记忆", "东区音乐公园"],
+    "factType": "overview",
+    "content": "东郊记忆是在工业旧址上改造的文创园区，空间开阔，适合安排下午到傍晚的拍照、展览和轻松散步。",
+    "sourceName": "东郊记忆园区介绍",
+    "sourceUrl": "https://www.pihmh.com.cn/h-nd-50.html",
+    "updatedAt": "2026-05-12",
+    "tags": ["工业遗产", "文创园区", "拍照"],
+    "weight": 1.2
+  }
+]

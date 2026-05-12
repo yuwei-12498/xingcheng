@@ -132,6 +132,10 @@ public class PlanningOrchestrator {
                 : recallResult.recalledCandidates();
         List<Poi> externalCandidates = recallExternalCandidates(recalledCandidates, normalized);
         List<Poi> mergedCandidates = mergeRecalledCandidates(recalledCandidates, externalCandidates);
+        List<Poi> guardedMergedCandidates = routeOptimizer.prepareCandidates(mergedCandidates, normalized, false);
+        if (guardedMergedCandidates != null && !guardedMergedCandidates.isEmpty()) {
+            mergedCandidates = guardedMergedCandidates;
+        }
         String recallStrategy = normalizeRecallStrategy(recallResult.recallStrategy());
         if (!externalCandidates.isEmpty()) {
             log.info("Planning recall merged {} external POIs from GEO API.", externalCandidates.size());

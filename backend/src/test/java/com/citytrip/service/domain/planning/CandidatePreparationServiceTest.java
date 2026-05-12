@@ -131,6 +131,130 @@ class CandidatePreparationServiceTest {
                 .containsExactly("External Museum", "Local Gallery");
     }
 
+    @Test
+    void shouldKeepHotpotAndDropHardwareWhenFoodIntentIsExplicit() {
+        PoiService poiService = mock(PoiService.class);
+        when(poiService.enrichOperatingStatus(anyList(), any(LocalDate.class))).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            List<Poi> pois = invocation.getArgument(0);
+            for (Poi poi : pois) {
+                poi.setAvailableOnTripDate(true);
+                poi.setOperatingStatus("OPEN");
+            }
+            return pois;
+        });
+        CandidatePreparationService service = new CandidatePreparationService(
+                poiService,
+                new ItineraryRequestNormalizer(),
+                new DefaultPoiScoringStrategy(new ItineraryRequestNormalizer())
+        );
+
+        GenerateReqDTO request = new GenerateReqDTO();
+        request.setTripDate("2026-05-10");
+        request.setThemes(List.of("美食"));
+        request.setPreferredPoiCategories(List.of("火锅", "餐饮"));
+        request.setExcludedPoiCategories(List.of("五金", "家装", "装修材料", "纱窗"));
+        request.setBudgetLevel("低");
+        request.setBudgetTight(true);
+        request.setWalkingLevel("low");
+
+        Poi hotpot = poi("蜀大侠火锅", "美食,火锅,餐饮", "friends,team", "low");
+        hotpot.setCategory("火锅");
+        hotpot.setPriorityScore(BigDecimal.valueOf(3.0D));
+        hotpot.setAvgCost(BigDecimal.valueOf(80));
+
+        Poi hardware = poi("自然风纱窗", "五金,家具,室内装修材料零售", "friends,team", "low");
+        hardware.setCategory("五金、家具及室内装修材料零售");
+        hardware.setPriorityScore(BigDecimal.valueOf(9.0D));
+        hardware.setAvgCost(BigDecimal.valueOf(20));
+
+        List<Poi> prepared = service.prepareCandidates(List.of(hardware, hotpot), request, false);
+
+        assertThat(prepared).extracting(Poi::getName).containsExactly("蜀大侠火锅");
+    }
+
+
+
+    @Test
+    void shouldKeepBarbecueAndDropHardwareWhenFoodIntentIsExplicit() {
+        PoiService poiService = mock(PoiService.class);
+        when(poiService.enrichOperatingStatus(anyList(), any(LocalDate.class))).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            List<Poi> pois = invocation.getArgument(0);
+            for (Poi poi : pois) {
+                poi.setAvailableOnTripDate(true);
+                poi.setOperatingStatus("OPEN");
+            }
+            return pois;
+        });
+        CandidatePreparationService service = new CandidatePreparationService(
+                poiService,
+                new ItineraryRequestNormalizer(),
+                new DefaultPoiScoringStrategy(new ItineraryRequestNormalizer())
+        );
+
+        GenerateReqDTO request = new GenerateReqDTO();
+        request.setTripDate("2026-05-10");
+        request.setThemes(List.of("\u7f8e\u98df"));
+        request.setPreferredPoiCategories(List.of("\u70e4\u8089", "\u70e7\u70e4", "\u9910\u996e"));
+        request.setExcludedPoiCategories(List.of("\u4e94\u91d1", "\u5bb6\u88c5", "\u88c5\u4fee\u6750\u6599", "\u7eb1\u7a97"));
+        request.setWalkingLevel("low");
+
+        Poi barbecue = poi("\u5927\u7b7e\u95e8\u70e4\u8089", "\u7f8e\u98df,\u70e4\u8089,\u70e7\u70e4,\u9910\u996e", "friends,team", "low");
+        barbecue.setCategory("\u70e4\u8089");
+        barbecue.setPriorityScore(BigDecimal.valueOf(3.0D));
+
+        Poi hardware = poi("\u81ea\u7136\u98ce\u7eb1\u7a97", "\u4e94\u91d1,\u5bb6\u5177,\u5ba4\u5185\u88c5\u4fee\u6750\u6599\u96f6\u552e", "friends,team", "low");
+        hardware.setCategory("\u4e94\u91d1\u3001\u5bb6\u5177\u53ca\u5ba4\u5185\u88c5\u4fee\u6750\u6599\u96f6\u552e");
+        hardware.setPriorityScore(BigDecimal.valueOf(9.0D));
+
+        List<Poi> prepared = service.prepareCandidates(List.of(hardware, barbecue), request, false);
+
+        assertThat(prepared).extracting(Poi::getName).containsExactly("\u5927\u7b7e\u95e8\u70e4\u8089");
+    }
+
+    @Test
+    void shouldKeepNetCafeAndDropMuseumOrHardwareWhenLeisureIntentIsExplicit() {
+        PoiService poiService = mock(PoiService.class);
+        when(poiService.enrichOperatingStatus(anyList(), any(LocalDate.class))).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            List<Poi> pois = invocation.getArgument(0);
+            for (Poi poi : pois) {
+                poi.setAvailableOnTripDate(true);
+                poi.setOperatingStatus("OPEN");
+            }
+            return pois;
+        });
+        CandidatePreparationService service = new CandidatePreparationService(
+                poiService,
+                new ItineraryRequestNormalizer(),
+                new DefaultPoiScoringStrategy(new ItineraryRequestNormalizer())
+        );
+
+        GenerateReqDTO request = new GenerateReqDTO();
+        request.setTripDate("2026-05-10");
+        request.setThemes(List.of("\u4f11\u95f2"));
+        request.setPreferredPoiCategories(List.of("\u7f51\u5427", "\u7f51\u5496", "\u7535\u7ade", "\u5a31\u4e50"));
+        request.setExcludedPoiCategories(List.of("\u535a\u7269\u9986", "\u666f\u533a", "\u4e94\u91d1", "\u5bb6\u88c5", "\u7eb1\u7a97"));
+        request.setWalkingLevel("low");
+
+        Poi netCafe = poi("\u718a\u732b\u7535\u7ade\u7f51\u5496", "\u4f11\u95f2,\u5a31\u4e50,\u7f51\u5496,\u7535\u7ade", "friends,team", "low");
+        netCafe.setCategory("\u7f51\u5427");
+        netCafe.setPriorityScore(BigDecimal.valueOf(3.0D));
+
+        Poi museum = poi("\u6210\u90fd\u535a\u7269\u9986", "\u6587\u5316,\u535a\u7269\u9986", "friends,team", "low");
+        museum.setCategory("\u535a\u7269\u9986");
+        museum.setPriorityScore(BigDecimal.valueOf(9.0D));
+
+        Poi hardware = poi("\u81ea\u7136\u98ce\u7eb1\u7a97", "\u4e94\u91d1,\u5bb6\u5177,\u5ba4\u5185\u88c5\u4fee\u6750\u6599\u96f6\u552e", "friends,team", "low");
+        hardware.setCategory("\u4e94\u91d1\u3001\u5bb6\u5177\u53ca\u5ba4\u5185\u88c5\u4fee\u6750\u6599\u96f6\u552e");
+        hardware.setPriorityScore(BigDecimal.valueOf(8.0D));
+
+        List<Poi> prepared = service.prepareCandidates(List.of(museum, hardware, netCafe), request, false);
+
+        assertThat(prepared).extracting(Poi::getName).containsExactly("\u718a\u732b\u7535\u7ade\u7f51\u5496");
+    }
+
     private Poi poi(String name, String tags, String suitableFor, String walkingLevel) {
         Poi poi = new Poi();
         poi.setName(name);

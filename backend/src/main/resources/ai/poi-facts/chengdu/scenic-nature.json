@@ -1,0 +1,44 @@
+[
+  {
+    "id": "qingchengshan-overview",
+    "city": "\u6210\u90fd",
+    "categoryFile": "scenic-nature",
+    "poiName": "\u9752\u57ce\u5c71",
+    "aliases": [
+      "\u9752\u57ce\u5c71",
+      "\u9752\u57ce\u5c71\u666f\u533a"
+    ],
+    "factType": "overview",
+    "content": "\u9752\u57ce\u5c71\u5c71\u8def\u548c\u53f0\u9636\u8f83\u591a\uff0c\u9002\u5408\u65e9\u51fa\u53d1\u5e76\u9884\u7559\u4f53\u529b\uff1b\u5982\u679c\u548c\u90fd\u6c5f\u5830\u653e\u5728\u540c\u4e00\u5929\uff0c\u5efa\u8bae\u628a\u901a\u52e4\u548c\u6b65\u884c\u65f6\u95f4\u90fd\u7b97\u5bbd\u4e00\u70b9\u3002",
+    "sourceName": "\u90fd\u6c5f\u5830\u6587\u65c5\u9752\u57ce\u5c71\u90fd\u6c5f\u5830\u4ecb\u7ecd",
+    "sourceUrl": "https://www.djy517.com/",
+    "updatedAt": "2026-05-12",
+    "tags": [
+      "\u5c71\u8def",
+      "\u65e9\u51fa\u53d1",
+      "\u4f53\u529b"
+    ],
+    "weight": 1.2
+  },
+  {
+    "id": "dujiangyan-overview",
+    "city": "\u6210\u90fd",
+    "categoryFile": "scenic-nature",
+    "poiName": "\u90fd\u6c5f\u5830\u666f\u533a",
+    "aliases": [
+      "\u90fd\u6c5f\u5830",
+      "\u90fd\u6c5f\u5830\u666f\u533a"
+    ],
+    "factType": "overview",
+    "content": "\u90fd\u6c5f\u5830\u666f\u533a\u4ee5\u79bb\u5806\u516c\u56ed\u3001\u5b9d\u74f6\u53e3\u3001\u98de\u6c99\u5830\u3001\u5b89\u6f9c\u7d22\u6865\u7b49\u6b65\u884c\u4e32\u8054\u4e3a\u4e3b\uff0c\u9002\u5408\u7559\u51fa\u5b8c\u6574\u6b65\u884c\u548c\u62cd\u7167\u65f6\u95f4\u3002",
+    "sourceName": "\u90fd\u6c5f\u5830\u6587\u65c5\u666f\u533a\u4ecb\u7ecd",
+    "sourceUrl": "https://www.djy517.com/",
+    "updatedAt": "2026-05-12",
+    "tags": [
+      "\u6c34\u5229\u5de5\u7a0b",
+      "\u6b65\u884c",
+      "\u7ecf\u5178\u7ebf\u8def"
+    ],
+    "weight": 1.4
+  }
+]

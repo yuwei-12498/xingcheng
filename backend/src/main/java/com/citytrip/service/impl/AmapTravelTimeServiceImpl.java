@@ -3,6 +3,8 @@ package com.citytrip.service.impl;
 import com.citytrip.config.AmapProperties;
 import com.citytrip.model.entity.Poi;
 import com.citytrip.service.TravelTimeService;
+import com.citytrip.service.TravelModeRequest;
+import com.citytrip.service.ai.model.TravelModeDecisionService;
 import com.citytrip.service.geo.GeoPoint;
 import com.citytrip.service.geo.GeoRouteEstimate;
 import com.citytrip.service.geo.GeoRouteStep;
@@ -10,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -47,20 +50,59 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
     private final RestTemplate amapRestTemplate;
     private final ObjectMapper objectMapper;
     private final LocalTravelTimeServiceImpl localTravelTimeService;
+    private final TravelModeDecisionService travelModeDecisionService;
 
     public AmapTravelTimeServiceImpl(AmapProperties amapProperties,
                                      @Qualifier("amapRestTemplate") RestTemplate amapRestTemplate,
                                      ObjectMapper objectMapper,
                                      LocalTravelTimeServiceImpl localTravelTimeService) {
+        this(amapProperties, amapRestTemplate, objectMapper, localTravelTimeService, new TravelModeDecisionService());
+    }
+
+    @Autowired
+    public AmapTravelTimeServiceImpl(AmapProperties amapProperties,
+                                     @Qualifier("amapRestTemplate") RestTemplate amapRestTemplate,
+                                     ObjectMapper objectMapper,
+                                     LocalTravelTimeServiceImpl localTravelTimeService,
+                                     TravelModeDecisionService travelModeDecisionService) {
         this.amapProperties = amapProperties;
         this.amapRestTemplate = amapRestTemplate;
         this.objectMapper = objectMapper;
         this.localTravelTimeService = localTravelTimeService;
+        this.travelModeDecisionService = travelModeDecisionService;
     }
 
     @Override
     public int estimateTravelTimeMinutes(Poi from, Poi to) {
         return estimateTravelLeg(from, to).estimatedMinutes();
+    }
+
+    @Override
+    public TravelLegEstimate estimateTravelLeg(Poi from, Poi to, TravelModeRequest requestedMode) {
+        TravelModeRequest effectiveMode = requestedMode == null ? TravelModeRequest.AUTO : requestedMode;
+        if (effectiveMode.isAuto()) {
+            return estimateTravelLeg(from, to);
+        }
+        if (from == null || to == null || samePoi(from, to)) {
+            return localTravelTimeService.estimateTravelLeg(from, to);
+        }
+        if (!isReady() || !hasCoordinate(from) || !hasCoordinate(to)) {
+            return localTravelTimeService.estimateTravelLeg(from, to);
+        }
+
+        try {
+            return queryRequestedMode(from, to, effectiveMode)
+                    .filter(estimate -> estimate.estimatedMinutes() > 0)
+                    .orElseGet(() -> localTravelTimeService.estimateTravelLeg(from, to));
+        } catch (RestClientException ex) {
+            log.warn("Amap explicit route request failed, fallback to local estimator. mode={}, from={}, to={}, reason={}",
+                    effectiveMode.code(), safeName(from), safeName(to), ex.getMessage());
+            return localTravelTimeService.estimateTravelLeg(from, to);
+        } catch (Exception ex) {
+            log.warn("Amap explicit route parsing failed, fallback to local estimator. mode={}, from={}, to={}, reason={}",
+                    effectiveMode.code(), safeName(from), safeName(to), ex.getMessage());
+            return localTravelTimeService.estimateTravelLeg(from, to);
+        }
     }
 
     @Override
@@ -78,10 +120,13 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
             for (AmapMode mode : modes) {
                 queryRoute(mode, from, to).ifPresent(estimates::add);
             }
-            return estimates.stream()
+            List<TravelLegEstimate> candidates = estimates.stream()
                     .filter(estimate -> estimate.estimatedMinutes() > 0)
-                    .min(Comparator.comparingInt(TravelLegEstimate::estimatedMinutes))
-                    .orElseGet(() -> localTravelTimeService.estimateTravelLeg(from, to));
+                    .toList();
+            if (candidates.isEmpty()) {
+                return localTravelTimeService.estimateTravelLeg(from, to);
+            }
+            return travelModeDecisionService.pickBest(candidates);
         } catch (RestClientException ex) {
             log.warn("Amap route request failed, fallback to local estimator. from={}, to={}, reason={}",
                     safeName(from), safeName(to), ex.getMessage());
@@ -91,6 +136,16 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
                     safeName(from), safeName(to), ex.getMessage());
             return localTravelTimeService.estimateTravelLeg(from, to);
         }
+    }
+
+    private Optional<TravelLegEstimate> queryRequestedMode(Poi from, Poi to, TravelModeRequest requestedMode) {
+        return switch (requestedMode) {
+            case AUTO -> Optional.empty();
+            case WALK -> queryRoute(AmapMode.WALKING, from, to);
+            case BIKE -> queryRoute(AmapMode.BICYCLING, from, to);
+            case TRANSIT -> queryRoute(AmapMode.TRANSIT, from, to);
+            case TAXI -> queryRoute(AmapMode.DRIVING, from, to);
+        };
     }
 
     private boolean isReady() {
@@ -103,20 +158,23 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
     private List<AmapMode> resolveAttemptModes(Poi from, Poi to) {
         double distanceKm = straightDistanceKm(from, to);
         List<String> configured = amapProperties.getTravelModes() == null || amapProperties.getTravelModes().isEmpty()
-                ? List.of("walking", "transit", "driving")
+                ? List.of("walking", "bicycling", "transit", "driving")
                 : amapProperties.getTravelModes();
         List<AmapMode> ordered = new ArrayList<>();
         if (distanceKm <= amapProperties.getWalkingMaxDistanceKm()) {
             addModeIfConfigured(ordered, configured, AmapMode.WALKING);
+            addModeIfConfigured(ordered, configured, AmapMode.BICYCLING);
             addModeIfConfigured(ordered, configured, AmapMode.TRANSIT);
             addModeIfConfigured(ordered, configured, AmapMode.DRIVING);
         } else if (distanceKm <= amapProperties.getTransitMaxDistanceKm()) {
+            addModeIfConfigured(ordered, configured, AmapMode.BICYCLING);
             addModeIfConfigured(ordered, configured, AmapMode.TRANSIT);
             addModeIfConfigured(ordered, configured, AmapMode.DRIVING);
             addModeIfConfigured(ordered, configured, AmapMode.WALKING);
         } else {
             addModeIfConfigured(ordered, configured, AmapMode.DRIVING);
             addModeIfConfigured(ordered, configured, AmapMode.TRANSIT);
+            addModeIfConfigured(ordered, configured, AmapMode.BICYCLING);
         }
         return ordered.isEmpty() ? List.of(AmapMode.DRIVING) : ordered;
     }
@@ -135,6 +193,7 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
         MultiValueMap<String, String> query = buildBaseQuery(from, to);
         String path = switch (mode) {
             case WALKING -> amapProperties.getWalkingPath();
+            case BICYCLING -> amapProperties.getBicyclingPath();
             case TRANSIT -> {
                 query.add("city", resolveCityName(from, to));
                 query.add("cityd", resolveCityName(to, from));
@@ -144,7 +203,15 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
         };
         addSignatureIfNecessary(query);
         JsonNode root = callJson(path, query);
-        if (!"1".equals(root.path("status").asText())) {
+        if (mode == AmapMode.BICYCLING) {
+            if (root.path("errcode").asInt(-1) != 0) {
+                String errCode = root.path("errcode").asText("");
+                String errMsg = root.path("errmsg").asText("");
+                log.warn("Amap route returned non-success bicycling response. mode={}, errcode={}, errmsg={}",
+                        mode.configName, errCode, errMsg);
+                return Optional.empty();
+            }
+        } else if (!"1".equals(root.path("status").asText())) {
             String infoCode = root.path("infocode").asText("");
             String info = root.path("info").asText("");
             log.warn("Amap route returned non-success status. mode={}, infocode={}, info={}", mode.configName, infoCode, info);
@@ -206,6 +273,7 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
     private Optional<TravelLegEstimate> parseEstimate(AmapMode mode, JsonNode root) {
         return switch (mode) {
             case WALKING, DRIVING -> parsePathEstimate(mode, root.path("route").path("paths").path(0));
+            case BICYCLING -> parsePathEstimate(mode, root.path("data").path("paths").path(0));
             case TRANSIT -> parseTransitEstimate(root.path("route").path("transits").path(0));
         };
     }
@@ -228,7 +296,7 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
                 points.addAll(stepPoints);
                 routeSteps.add(new GeoRouteStep(
                         normalizeText(step.path("instruction").asText("")),
-                        mode == AmapMode.WALKING ? "walk" : "taxi",
+                        stepTypeFor(mode),
                         parsePositiveInt(step.path("distance")),
                         secondsToMinutes(parsePositiveInt(step.path("duration"))),
                         null,
@@ -244,6 +312,15 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
         BigDecimal distanceKm = distanceMeters == null ? null : metersToKm(distanceMeters);
         GeoRouteEstimate detailed = new GeoRouteEstimate(toMinutes(seconds), distanceKm, mode.label, points, routeSteps);
         return Optional.of(new TravelLegEstimate(toMinutes(seconds), distanceKm, mode.label, points, detailed));
+    }
+
+    private String stepTypeFor(AmapMode mode) {
+        return switch (mode) {
+            case WALKING -> "walk";
+            case BICYCLING -> "bike";
+            case DRIVING -> "taxi";
+            case TRANSIT -> "transit";
+        };
     }
 
     private Optional<TravelLegEstimate> parseTransitEstimate(JsonNode transit) {
@@ -446,7 +523,7 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
         }
         return StringUtils.hasText(amapProperties.getDefaultCityName())
                 ? amapProperties.getDefaultCityName().trim()
-                : "成都";
+                : "鎴愰兘";
     }
 
     private boolean samePoi(Poi from, Poi to) {
@@ -497,9 +574,10 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
     }
 
     private enum AmapMode {
-        WALKING("walking", "步行"),
-        TRANSIT("transit", "公交+步行"),
-        DRIVING("driving", "打车");
+        WALKING("walking", "\u6B65\u884C"),
+        BICYCLING("bicycling", "\u9A91\u884C"),
+        TRANSIT("transit", "\u516C\u4EA4+\u6B65\u884C"),
+        DRIVING("driving", "\u6253\u8F66");
 
         private final String configName;
         private final String label;
@@ -510,3 +588,4 @@ public class AmapTravelTimeServiceImpl implements TravelTimeService {
         }
     }
 }
+

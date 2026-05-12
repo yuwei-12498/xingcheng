@@ -1,0 +1,89 @@
+[
+  {
+    "id": "chengdu-museum-overview",
+    "city": "\u6210\u90fd",
+    "categoryFile": "museum",
+    "poiName": "\u6210\u90fd\u535a\u7269\u9986",
+    "aliases": [
+      "\u6210\u90fd\u535a\u7269\u9986",
+      "\u6210\u535a"
+    ],
+    "factType": "overview",
+    "content": "\u6210\u90fd\u535a\u7269\u9986\u4f4d\u4e8e\u5929\u5e9c\u5e7f\u573a\u897f\u4fa7\uff0c\u5e38\u8bbe\u5c55\u628a\u53e4\u8700\u6587\u660e\u3001\u57ce\u5e02\u53d8\u8fc1\u4e0e\u6c11\u4fd7\u751f\u6d3b\u4e32\u5728\u540c\u4e00\u6761\u53c2\u89c2\u7ebf\u4e0a\uff0c\u9002\u5408\u4e0e\u5929\u5e9c\u5e7f\u573a\u3001\u4eba\u6c11\u516c\u56ed\u5b89\u6392\u6210\u534a\u5929\u7684\u4eba\u6587\u8def\u7ebf\u3002",
+    "sourceName": "\u6210\u90fd\u535a\u7269\u9986\u53c2\u89c2\u6307\u5357",
+    "sourceUrl": "https://www.cdmuseum.com/zhinan/",
+    "updatedAt": "2026-05-12",
+    "tags": [
+      "\u535a\u7269\u9986",
+      "\u4eba\u6587",
+      "\u5e02\u4e2d\u5fc3",
+      "\u534a\u5929"
+    ],
+    "weight": 1.5
+  },
+  {
+    "id": "chengdu-museum-guide",
+    "city": "\u6210\u90fd",
+    "categoryFile": "museum",
+    "poiName": "\u6210\u90fd\u535a\u7269\u9986",
+    "aliases": [
+      "\u6210\u90fd\u535a\u7269\u9986",
+      "\u6210\u535a"
+    ],
+    "factType": "visit-guide",
+    "content": "\u5b98\u65b9\u5bfc\u89c8\u4fe1\u606f\u8986\u76d6\u8bb2\u89e3\u3001\u670d\u52a1\u53f0\u4e0e\u53c2\u89c2\u52a8\u7ebf\u63d0\u793a\uff0c\u9002\u5408\u5148\u770b\u5e38\u8bbe\u5c55\u518d\u8865\u4e34\u5c55\uff1b\u5982\u679c\u540c\u884c\u4eba\u504f\u597d\u8f7b\u677e\u8def\u7ebf\uff0c\u53ef\u4ee5\u628a\u6210\u90fd\u535a\u7269\u9986\u653e\u5728\u767d\u5929\u524d\u534a\u6bb5\u3002",
+    "sourceName": "\u6210\u90fd\u535a\u7269\u9986\u5bfc\u89c8\u4fe1\u606f",
+    "sourceUrl": "https://www.cdmuseum.com/daolan/",
+    "updatedAt": "2026-05-12",
+    "tags": [
+      "\u5bfc\u89c8",
+      "\u8bb2\u89e3",
+      "\u5ba4\u5185",
+      "\u4eb2\u5b50"
+    ],
+    "weight": 1.3
+  },
+  {
+    "id": "jinsha-overview",
+    "city": "\u6210\u90fd",
+    "categoryFile": "museum",
+    "poiName": "\u91d1\u6c99\u9057\u5740\u535a\u7269\u9986",
+    "aliases": [
+      "\u91d1\u6c99\u9057\u5740\u535a\u7269\u9986",
+      "\u91d1\u6c99\u9057\u5740",
+      "\u91d1\u6c99\u535a\u7269\u9986"
+    ],
+    "factType": "overview",
+    "content": "\u91d1\u6c99\u9057\u5740\u535a\u7269\u9986\u4ee5\u53e4\u8700\u9057\u8ff9\u9986\u548c\u6587\u7269\u9648\u5217\u9986\u4e3a\u6838\u5fc3\uff0c\u592a\u9633\u795e\u9e1f\u7b49\u6587\u7269\u8fa8\u8bc6\u5ea6\u9ad8\uff0c\u9002\u5408\u548c\u6210\u90fd\u535a\u7269\u9986\u533a\u5206\u6210\u201c\u53e4\u8700\u6587\u660e\u7ebf\u201d\u3002",
+    "sourceName": "\u91d1\u6c99\u9057\u5740\u535a\u7269\u9986",
+    "sourceUrl": "https://www.jinshasitemuseum.com/",
+    "updatedAt": "2026-05-12",
+    "tags": [
+      "\u53e4\u8700",
+      "\u9057\u5740",
+      "\u535a\u7269\u9986"
+    ],
+    "weight": 1.4
+  },
+  {
+    "id": "dufu-caotang-overview",
+    "city": "\u6210\u90fd",
+    "categoryFile": "museum",
+    "poiName": "\u675c\u752b\u8349\u5802",
+    "aliases": [
+      "\u675c\u752b\u8349\u5802",
+      "\u8349\u5802"
+    ],
+    "factType": "overview",
+    "content": "\u675c\u752b\u8349\u5802\u517c\u5177\u8bd7\u53f2\u3001\u4eba\u6587\u4e0e\u56ed\u6797\u5c5e\u6027\uff0c\u53c2\u89c2\u8282\u594f\u6bd4\u666e\u901a\u6253\u5361\u70b9\u66f4\u6162\uff0c\u9002\u5408\u7559\u51fa\u5b89\u9759\u6b65\u884c\u548c\u9605\u8bfb\u4ecb\u7ecd\u724c\u7684\u65f6\u95f4\u3002",
+    "sourceName": "\u6210\u90fd\u675c\u752b\u8349\u5802\u535a\u7269\u9986",
+    "sourceUrl": "https://www.cddfct.com/",
+    "updatedAt": "2026-05-12",
+    "tags": [
+      "\u8bd7\u6b4c",
+      "\u56ed\u6797",
+      "\u4eba\u6587"
+    ],
+    "weight": 1.3
+  }
+]

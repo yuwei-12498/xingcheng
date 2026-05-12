@@ -21,6 +21,10 @@ public interface TravelTimeService {
         return new TravelLegEstimate(estimateTravelTimeMinutes(from, to), null, null);
     }
 
+    default TravelLegEstimate estimateTravelLeg(Poi from, Poi to, TravelModeRequest requestedMode) {
+        return estimateTravelLeg(from, to);
+    }
+
     record TravelLegEstimate(int estimatedMinutes,
                              BigDecimal estimatedDistanceKm,
                              String transportMode,

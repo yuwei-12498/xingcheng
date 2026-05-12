@@ -1,5 +1,6 @@
 package com.citytrip.config;
 
+import com.citytrip.service.ai.model.AiPlatformProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ public class LlmProperties {
     private int timeoutSeconds = 20;
     private int connectTimeoutSeconds = 3;
     private int readTimeoutSeconds = 0;
+    private AiPlatformProperties aiPlatform = new AiPlatformProperties();
     private FeatureFlags features = new FeatureFlags();
     private OpenAiProperties openai = new OpenAiProperties();
 
@@ -63,6 +65,14 @@ public class LlmProperties {
 
     public void setReadTimeoutSeconds(int readTimeoutSeconds) {
         this.readTimeoutSeconds = readTimeoutSeconds;
+    }
+
+    public AiPlatformProperties getAiPlatform() {
+        return aiPlatform;
+    }
+
+    public void setAiPlatform(AiPlatformProperties aiPlatform) {
+        this.aiPlatform = aiPlatform == null ? new AiPlatformProperties() : aiPlatform;
     }
 
     public FeatureFlags getFeatures() {

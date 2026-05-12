@@ -1,0 +1,16 @@
+[
+  {
+    "id": "wenshu-monastery-overview",
+    "city": "成都",
+    "categoryFile": "temple-culture",
+    "poiName": "文殊院",
+    "aliases": ["文殊院", "文殊院寺"],
+    "factType": "overview",
+    "content": "文殊院是成都市区重要的佛教文化地标，适合安排安静参观，再顺路体验周边素斋和老城街巷。",
+    "sourceName": "在地整理",
+    "sourceUrl": "https://www.westchinago.com/chengdu-wenshu-monastery/",
+    "updatedAt": "2026-05-12",
+    "tags": ["佛教", "安静", "老城"],
+    "weight": 1.2
+  }
+]

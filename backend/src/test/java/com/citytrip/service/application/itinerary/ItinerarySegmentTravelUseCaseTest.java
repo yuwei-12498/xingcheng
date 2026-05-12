@@ -1,11 +1,13 @@
 package com.citytrip.service.application.itinerary;
 
 import com.citytrip.model.dto.GenerateReqDTO;
+import com.citytrip.model.dto.SegmentTravelReqDTO;
 import com.citytrip.model.entity.SavedItinerary;
 import com.citytrip.model.vo.ItineraryNodeVO;
 import com.citytrip.model.vo.ItineraryOptionVO;
 import com.citytrip.model.vo.ItineraryVO;
 import com.citytrip.service.TravelTimeService;
+import com.citytrip.service.TravelModeRequest;
 import com.citytrip.service.domain.planning.SegmentRouteGuideService;
 import com.citytrip.service.geo.GeoPoint;
 import com.citytrip.service.impl.AmapTravelTimeServiceImpl;
@@ -42,11 +44,11 @@ class ItinerarySegmentTravelUseCaseTest {
         );
 
         GenerateReqDTO request = new GenerateReqDTO();
-        request.setDeparturePlaceName("酒店");
+        request.setDeparturePlaceName("??");
         request.setDepartureLatitude(30.65D);
         request.setDepartureLongitude(104.06D);
-
         request.setStartTime("09:00");
+
         ItineraryNodeVO firstNode = node(1L, 1, 1, "A", 30.652D, 104.062D);
         firstNode.setTravelTime(10);
         firstNode.setStayDuration(60);
@@ -71,10 +73,10 @@ class ItinerarySegmentTravelUseCaseTest {
         entity.setRequestJson(savedItineraryCodec.writeJson(request));
         entity.setItineraryJson(savedItineraryCodec.writeJson(itinerary));
         when(savedItineraryRepository.requireOwned(7L, 99L)).thenReturn(entity);
-        when(amapTravelTimeService.estimateTravelLeg(any(), any())).thenReturn(new TravelTimeService.TravelLegEstimate(
+        when(amapTravelTimeService.estimateTravelLeg(any(), any(), eq(TravelModeRequest.AUTO))).thenReturn(new TravelTimeService.TravelLegEstimate(
                 16,
                 BigDecimal.valueOf(2.84D),
-                "公交+步行",
+                "??+??",
                 List.of(point(30.652D, 104.062D), point(30.66D, 104.072D))
         ));
         when(savedItineraryCommandService.save(eq(7L), eq(99L), any(GenerateReqDTO.class), any(ItineraryVO.class)))
@@ -84,8 +86,9 @@ class ItinerarySegmentTravelUseCaseTest {
 
         assertThat(updated.getNodes().get(1).getTravelTime()).isEqualTo(16);
         assertThat(updated.getNodes().get(1).getTravelDistanceKm()).isEqualByComparingTo("2.8");
-        assertThat(updated.getNodes().get(1).getTravelTransportMode()).isEqualTo("公交+步行");
+        assertThat(updated.getNodes().get(1).getTravelTransportMode()).isEqualTo("??+??");
         assertThat(updated.getNodes().get(1).getSegmentRouteGuide()).isNotNull();
+        assertThat(updated.getNodes().get(1).getSegmentRouteGuide().getRecommendedTransportMode()).isEqualTo("??+??");
         assertThat(updated.getNodes().get(1).getRoutePathPoints()).hasSize(2);
         assertThat(updated.getNodes().get(0).getStartTime()).isEqualTo("09:10");
         assertThat(updated.getNodes().get(0).getEndTime()).isEqualTo("10:10");
@@ -112,7 +115,7 @@ class ItinerarySegmentTravelUseCaseTest {
         );
 
         GenerateReqDTO request = new GenerateReqDTO();
-        request.setDeparturePlaceName("酒店");
+        request.setDeparturePlaceName("??");
         request.setDepartureLatitude(30.65D);
         request.setDepartureLongitude(104.06D);
 
@@ -130,10 +133,10 @@ class ItinerarySegmentTravelUseCaseTest {
         entity.setRequestJson(savedItineraryCodec.writeJson(request));
         entity.setItineraryJson(savedItineraryCodec.writeJson(itinerary));
         when(savedItineraryRepository.requireOwned(7L, 99L)).thenReturn(entity);
-        when(amapTravelTimeService.estimateTravelLeg(any(), any())).thenReturn(new TravelTimeService.TravelLegEstimate(
+        when(amapTravelTimeService.estimateTravelLeg(any(), any(), eq(TravelModeRequest.AUTO))).thenReturn(new TravelTimeService.TravelLegEstimate(
                 18,
                 BigDecimal.valueOf(6.2D),
-                "打车"
+                "??"
         ));
         when(savedItineraryCommandService.save(eq(7L), eq(99L), any(GenerateReqDTO.class), any(ItineraryVO.class)))
                 .thenAnswer(invocation -> invocation.getArgument(3));
@@ -142,11 +145,66 @@ class ItinerarySegmentTravelUseCaseTest {
 
         assertThat(updated.getNodes().get(2).getDepartureTravelTime()).isEqualTo(18);
         assertThat(updated.getNodes().get(2).getDepartureDistanceKm()).isEqualByComparingTo("6.2");
-        assertThat(updated.getNodes().get(2).getDepartureTransportMode()).isEqualTo("打车");
+        assertThat(updated.getNodes().get(2).getDepartureTransportMode()).isEqualTo("??");
         verify(amapTravelTimeService).estimateTravelLeg(
-                argThat(from -> from != null && "酒店".equals(from.getName())),
-                argThat(to -> to != null && Long.valueOf(3L).equals(to.getId()))
+                argThat(from -> from != null && "??".equals(from.getName())),
+                argThat(to -> to != null && Long.valueOf(3L).equals(to.getId())),
+                eq(TravelModeRequest.AUTO)
         );
+    }
+
+    @Test
+    void calculateShouldKeepAutoRecommendationWhileApplyingManualTaxiOverride() {
+        SavedItineraryRepository savedItineraryRepository = mock(SavedItineraryRepository.class);
+        SavedItineraryCommandService savedItineraryCommandService = mock(SavedItineraryCommandService.class);
+        AmapTravelTimeServiceImpl amapTravelTimeService = mock(AmapTravelTimeServiceImpl.class);
+        SavedItineraryCodec savedItineraryCodec = new SavedItineraryCodec(new ObjectMapper());
+        ItinerarySegmentTravelUseCase useCase = new ItinerarySegmentTravelUseCase(
+                savedItineraryRepository,
+                savedItineraryCodec,
+                savedItineraryCommandService,
+                amapTravelTimeService,
+                new SegmentRouteGuideService()
+        );
+
+        GenerateReqDTO request = new GenerateReqDTO();
+        request.setDeparturePlaceName("??");
+        request.setDepartureLatitude(30.65D);
+        request.setDepartureLongitude(104.06D);
+        request.setStartTime("09:00");
+
+        ItineraryNodeVO firstNode = node(1L, 1, 1, "A", 30.652D, 104.062D);
+        firstNode.setTravelTime(10);
+        firstNode.setStayDuration(60);
+        ItineraryNodeVO secondNode = node(2L, 1, 2, "B", 30.66D, 104.072D);
+        secondNode.setStayDuration(90);
+
+        ItineraryVO itinerary = new ItineraryVO();
+        itinerary.setId(99L);
+        itinerary.setNodes(List.of(firstNode, secondNode));
+
+        SavedItinerary entity = new SavedItinerary();
+        entity.setId(99L);
+        entity.setUserId(7L);
+        entity.setRequestJson(savedItineraryCodec.writeJson(request));
+        entity.setItineraryJson(savedItineraryCodec.writeJson(itinerary));
+        when(savedItineraryRepository.requireOwned(7L, 99L)).thenReturn(entity);
+        when(amapTravelTimeService.estimateTravelLeg(any(), any(), eq(TravelModeRequest.AUTO)))
+                .thenReturn(new TravelTimeService.TravelLegEstimate(18, BigDecimal.valueOf(3.2D), "??+??"));
+        when(amapTravelTimeService.estimateTravelLeg(any(), any(), eq(TravelModeRequest.TAXI)))
+                .thenReturn(new TravelTimeService.TravelLegEstimate(9, BigDecimal.valueOf(3.2D), "??"));
+        when(savedItineraryCommandService.save(eq(7L), eq(99L), any(GenerateReqDTO.class), any(ItineraryVO.class)))
+                .thenAnswer(invocation -> invocation.getArgument(3));
+
+        ItineraryVO updated = useCase.calculate(7L, 99L, 1, new SegmentTravelReqDTO("taxi"));
+
+        assertThat(updated.getNodes().get(1).getTravelTransportMode()).isEqualTo("??");
+        assertThat(updated.getNodes().get(1).getSegmentRouteGuide().getRecommendedTransportMode())
+                .isEqualTo("??+??");
+        assertThat(updated.getNodes().get(1).getSegmentRouteGuide().getTransportMode())
+                .isEqualTo("??");
+        verify(amapTravelTimeService).estimateTravelLeg(any(), any(), eq(TravelModeRequest.AUTO));
+        verify(amapTravelTimeService).estimateTravelLeg(any(), any(), eq(TravelModeRequest.TAXI));
     }
 
     private ItineraryNodeVO node(Long poiId, int dayNo, int stepOrder, String name, double latitude, double longitude) {

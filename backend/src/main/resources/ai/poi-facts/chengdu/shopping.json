@@ -1,0 +1,44 @@
+[
+  {
+    "id": "chunxi-road-overview",
+    "city": "成都",
+    "categoryFile": "shopping",
+    "poiName": "春熙路",
+    "aliases": ["春熙路", "成都春熙路"],
+    "factType": "overview",
+    "content": "春熙路是成都核心商圈，和 IFS、太古里之间步行串联成本低，适合安排夜景、餐饮和轻松逛街。",
+    "sourceName": "人民网春熙路商圈报道",
+    "sourceUrl": "https://ent.people.com.cn/n1/2023/0724/c457667-40042046.html",
+    "updatedAt": "2026-05-12",
+    "tags": ["商圈", "夜景", "步行"],
+    "weight": 1.3
+  },
+  {
+    "id": "taikoo-li-layout",
+    "city": "成都",
+    "categoryFile": "shopping",
+    "poiName": "太古里",
+    "aliases": ["太古里", "成都太古里"],
+    "factType": "overview",
+    "content": "成都太古里是开放式低密街区，与大慈寺相邻，适合把购物、拍照和慢逛安排在同一段行程里。",
+    "sourceName": "太古地产成都太古里项目介绍",
+    "sourceUrl": "https://www.swireproperties.com/zh-cn/portfolio/current-developments/taikoo-li-chengdu/",
+    "updatedAt": "2026-05-12",
+    "tags": ["开放街区", "拍照", "夜景"],
+    "weight": 1.4
+  },
+  {
+    "id": "ifs-core-location",
+    "city": "成都",
+    "categoryFile": "shopping",
+    "poiName": "IFS",
+    "aliases": ["IFS", "成都IFS", "国际金融中心", "国金"],
+    "factType": "overview",
+    "content": "成都 IFS 位于春熙路核心区，熊猫装置是高频打卡点，和春熙路、太古里可步行联动，适合放在市中心半天或夜游段。",
+    "sourceName": "成都IFS官网",
+    "sourceUrl": "https://www.cdifs.cn/",
+    "updatedAt": "2026-05-12",
+    "tags": ["商圈", "熊猫打卡", "市中心"],
+    "weight": 1.4
+  }
+]

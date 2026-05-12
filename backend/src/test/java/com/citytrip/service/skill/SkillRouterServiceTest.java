@@ -1,10 +1,12 @@
 package com.citytrip.service.skill;
 
 import com.citytrip.model.dto.ChatReqDTO;
+import com.citytrip.model.entity.Poi;
 import com.citytrip.model.vo.ChatSkillPayloadVO;
 import com.citytrip.service.PoiService;
 import com.citytrip.service.application.itinerary.ChatItineraryEditWorkflowService;
 import com.citytrip.service.application.itinerary.ChatReplacementWorkflowService;
+import com.citytrip.service.domain.ai.ChatPoiSkillService;
 import com.citytrip.service.geo.GeoSearchService;
 import com.citytrip.service.geo.PlaceDisambiguationService;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class SkillRouterServiceTest {
 
@@ -75,6 +78,32 @@ class SkillRouterServiceTest {
 
         assertThat(routed).isPresent();
         assertThat(routed.get().getSkillName()).isEqualTo("nearby_hotel");
+    }
+
+    @Test
+    void skillRouterShouldPickPoiRecommendationSkillForSceneRecommendationQuestion() {
+        ChatPoiSkillService chatPoiSkillService = mock(ChatPoiSkillService.class);
+        PoiRecommendationSkill poiRecommendationSkill = new PoiRecommendationSkill(chatPoiSkillService);
+        Poi poi = new Poi();
+        poi.setName("太古里");
+        poi.setCategory("商圈");
+        when(chatPoiSkillService.loadRelevantPois(org.mockito.ArgumentMatchers.any(ChatReqDTO.class))).thenReturn(List.of(poi));
+
+        SkillRouterService router = new SkillRouterService(List.of(
+                new RouteContextSkill(),
+                new ItineraryEditSkill(mock(ChatItineraryEditWorkflowService.class)),
+                new ItineraryReplaceSkill(mock(ChatReplacementWorkflowService.class)),
+                new NearbyHotelSkill(mock(GeoSearchService.class), mock(PoiService.class), mock(PlaceDisambiguationService.class)),
+                new NearbyPoiSkill(mock(GeoSearchService.class), mock(PoiService.class), mock(PlaceDisambiguationService.class)),
+                poiRecommendationSkill,
+                new PoiSearchSkill(mock(PoiService.class))
+        ));
+
+        Optional<ChatSkillPayloadVO> routed = router.route(chatReq("两个人晚上适合去哪逛逛", false));
+
+        assertThat(routed).isPresent();
+        assertThat(routed.get().getSkillName()).isEqualTo("poi_recommendation");
+        assertThat(routed.get().getResults()).extracting(ChatSkillPayloadVO.ResultItem::getName).containsExactly("太古里");
     }
 
     private ChatReqDTO chatReq(String question, boolean withItinerary) {

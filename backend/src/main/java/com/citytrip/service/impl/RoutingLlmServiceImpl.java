@@ -10,8 +10,10 @@ import com.citytrip.model.vo.RouteCriticDecisionVO;
 import com.citytrip.model.vo.SegmentTransportAnalysisVO;
 import com.citytrip.model.vo.SmartFillVO;
 import com.citytrip.service.LlmService;
+import com.citytrip.service.ai.adapter.LangChainLlmServiceAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -23,13 +25,25 @@ import java.util.function.Supplier;
 public class RoutingLlmServiceImpl implements LlmService {
     private static final Logger log = LoggerFactory.getLogger(RoutingLlmServiceImpl.class);
 
+    private final LlmService aiAdapter;
     private final RealLlmGatewayService realLlmService;
     private final MockLlmServiceImpl mockLlmService;
     private final LlmProperties llmProperties;
+    @Autowired(required = false)
+    private LangChainLlmServiceAdapter injectedAiAdapter;
 
+    @Autowired
     public RoutingLlmServiceImpl(RealLlmGatewayService realLlmService,
                                  MockLlmServiceImpl mockLlmService,
                                  LlmProperties llmProperties) {
+        this(null, realLlmService, mockLlmService, llmProperties);
+    }
+
+    RoutingLlmServiceImpl(LlmService aiAdapter,
+                                 RealLlmGatewayService realLlmService,
+                                 MockLlmServiceImpl mockLlmService,
+                                 LlmProperties llmProperties) {
+        this.aiAdapter = aiAdapter;
         this.realLlmService = realLlmService;
         this.mockLlmService = mockLlmService;
         this.llmProperties = llmProperties;
@@ -37,6 +51,9 @@ public class RoutingLlmServiceImpl implements LlmService {
 
     @Override
     public String generateRouteWarmTip(GenerateReqDTO userReq, List<ItineraryNodeVO> nodes) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().generateRouteWarmTip(userReq, nodes);
+        }
         return routeCall(
                 () -> realLlmService.generateRouteWarmTip(userReq, nodes),
                 () -> mockLlmService.generateRouteWarmTip(userReq, nodes),
@@ -46,6 +63,9 @@ public class RoutingLlmServiceImpl implements LlmService {
 
     @Override
     public String explainOptionRecommendation(GenerateReqDTO userReq, ItineraryOptionVO option) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().explainOptionRecommendation(userReq, option);
+        }
         return routeCall(
                 () -> realLlmService.explainOptionRecommendation(userReq, option),
                 () -> mockLlmService.explainOptionRecommendation(userReq, option),
@@ -55,6 +75,9 @@ public class RoutingLlmServiceImpl implements LlmService {
 
     @Override
     public RouteCriticDecisionVO criticSelectItineraryOption(GenerateReqDTO userReq, List<ItineraryOptionVO> options) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().criticSelectItineraryOption(userReq, options);
+        }
         return routeCallGeneric(
                 () -> realLlmService.criticSelectItineraryOption(userReq, options),
                 () -> mockLlmService.criticSelectItineraryOption(userReq, options),
@@ -64,6 +87,9 @@ public class RoutingLlmServiceImpl implements LlmService {
 
     @Override
     public String explainPoiChoice(GenerateReqDTO userReq, ItineraryNodeVO node) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().explainPoiChoice(userReq, node);
+        }
         return routeCall(
                 () -> realLlmService.explainPoiChoice(userReq, node),
                 () -> mockLlmService.explainPoiChoice(userReq, node),
@@ -73,6 +99,9 @@ public class RoutingLlmServiceImpl implements LlmService {
 
     @Override
     public SmartFillVO parseSmartFill(String text, List<String> poiNameHints) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().parseSmartFill(text, poiNameHints);
+        }
         return routeCallGeneric(
                 () -> realLlmService.parseSmartFill(text, poiNameHints),
                 () -> mockLlmService.parseSmartFill(text, poiNameHints),
@@ -82,6 +111,9 @@ public class RoutingLlmServiceImpl implements LlmService {
 
     @Override
     public DepartureLegEstimateVO estimateDepartureLeg(GenerateReqDTO userReq, ItineraryNodeVO firstNode) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().estimateDepartureLeg(userReq, firstNode);
+        }
         return routeCallGeneric(
                 () -> realLlmService.estimateDepartureLeg(userReq, firstNode),
                 () -> mockLlmService.estimateDepartureLeg(userReq, firstNode),
@@ -91,6 +123,9 @@ public class RoutingLlmServiceImpl implements LlmService {
 
     @Override
     public SegmentTransportAnalysisVO analyzeSegmentTransport(GenerateReqDTO userReq, ItineraryNodeVO fromNode, ItineraryNodeVO toNode) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().analyzeSegmentTransport(userReq, fromNode, toNode);
+        }
         return routeCallGeneric(
                 () -> realLlmService.analyzeSegmentTransport(userReq, fromNode, toNode),
                 () -> mockLlmService.analyzeSegmentTransport(userReq, fromNode, toNode),
@@ -100,11 +135,19 @@ public class RoutingLlmServiceImpl implements LlmService {
 
     @Override
     public ItineraryRouteDecorationVO decorateRouteExperience(GenerateReqDTO userReq, List<ItineraryNodeVO> nodes) {
+        if (resolveAiAdapter() != null && llmProperties.getAiPlatform().getOrchestrator().isEnabled()) {
+            return resolveAiAdapter().decorateRouteExperience(userReq, nodes);
+        }
         return routeCallGeneric(
                 () -> realLlmService.decorateRouteExperience(userReq, nodes),
                 () -> mockLlmService.decorateRouteExperience(userReq, nodes),
                 "decorateRouteExperience"
         );
+    }
+
+
+    private LlmService resolveAiAdapter() {
+        return aiAdapter != null ? aiAdapter : injectedAiAdapter;
     }
 
     private String routeCall(TextSupplier realSupplier, TextSupplier mockSupplier, String scene) {
@@ -146,7 +189,7 @@ public class RoutingLlmServiceImpl implements LlmService {
             return mockSupplier.get();
         }
         log.error("行程文案服务真实模型调用失败，且未启用降级。scene={}, reason={}", scene, reason, e);
-        throw new RuntimeException("真实大模型调用失败，且未启用 Mock 降级: " + reason, e);
+        throw new RuntimeException("真实回答链路调用失败，且未启用 Mock 降级: " + reason, e);
     }
 
     @FunctionalInterface
