@@ -494,7 +494,6 @@ curl http://127.0.0.1/api/pois
 | `GET` | `/api/admin/pois` | 管理员 POI 列表 |
 | `GET` | `/api/admin/community/posts` | 管理员社区帖子列表 |
 
-更完整字段约定见：`docs/api-contract/citytrip-api-contract.md`。
 
 ---
 
@@ -531,8 +530,6 @@ curl http://127.0.0.1/api/pois
 │       ├── utils/
 │       └── views/
 ├── deploy/onebox/
-├── docs/api-contract/
-├── docs/superpowers/plans/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .env.example
@@ -548,7 +545,6 @@ curl http://127.0.0.1/api/pois
 - 后端：JUnit 5、Spring Boot Test、MockRestServiceServer、Mockito。
 - 前端：Vitest、Vue Test Utils、Node test。
 - 数据库：Flyway 迁移覆盖核心表结构。
-- API：`docs/api-contract/citytrip-api-contract.md` 作为共享契约基础。
 - 算法：包含 `ItineraryRouteOptimizerDpTest`、`HybridPoiRecallServiceTest`、`DefaultPoiScoringStrategyTest` 等回归测试。
 
 常用验证命令：
